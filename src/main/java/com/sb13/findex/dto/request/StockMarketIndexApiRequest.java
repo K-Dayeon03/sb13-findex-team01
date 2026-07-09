@@ -1,5 +1,8 @@
 package com.sb13.findex.dto.request;
 
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
 /**
  * 주가지수시세 요청 파라미터입니다.
  *
@@ -155,4 +158,52 @@ public record StockMarketIndexApiRequest(
         String beginLsYrEdVsFltRt,
         String endLsYrEdVsFltRt
 ) {
+
+    public MultiValueMap<String, String> toQueryParams() {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+
+        add(params, "numOfRows", numOfRows);
+        add(params, "pageNo", pageNo);
+
+        // serviceKey, resultType은 ApiService에서 공통으로 넣는 것을 추천
+        // add(params, "resultType", resultType);
+        // add(params, "serviceKey", serviceKey);
+
+        add(params, "basDt", basDt);
+        add(params, "beginBasDt", beginBasDt);
+        add(params, "endBasDt", endBasDt);
+        add(params, "likeBasDt", likeBasDt);
+        add(params, "idxNm", idxNm);
+        add(params, "likeIdxNm", likeIdxNm);
+        add(params, "beginEpyItmsCnt", beginEpyItmsCnt);
+        add(params, "endEpyItmsCnt", endEpyItmsCnt);
+        add(params, "beginFltRt", beginFltRt);
+        add(params, "endFltRt", endFltRt);
+        add(params, "beginTrqu", beginTrqu);
+        add(params, "endTrqu", endTrqu);
+        add(params, "beginTrPrc", beginTrPrc);
+        add(params, "endTrPrc", endTrPrc);
+        add(params, "beginLstgMrktTotAmt", beginLstgMrktTotAmt);
+        add(params, "endLstgMrktTotAmt", endLstgMrktTotAmt);
+        add(params, "beginLsYrEdVsFltRg", beginLsYrEdVsFltRg);
+        add(params, "endLsYrEdVsFltRg", endLsYrEdVsFltRg);
+        add(params, "beginLsYrEdVsFltRt", beginLsYrEdVsFltRt);
+        add(params, "endLsYrEdVsFltRt", endLsYrEdVsFltRt);
+
+        return params;
+    }
+
+    private static void add(MultiValueMap<String, String> params, String name, Object value) {
+        if (value == null) {
+            return;
+        }
+
+        String stringValue = String.valueOf(value);
+
+        if (stringValue.isBlank()) {
+            return;
+        }
+
+        params.add(name, stringValue);
+    }
 }
