@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriBuilder;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -21,11 +19,12 @@ public class DataGoKrApiService {
     private final FindexApiProperties properties;
     private final RestClient findexRestClient;
 
-    public List<StockMarketIndex> getStockMarketIndexList() {
-       return getStockMarketIndexList(null);
+    public DataGoKrApiResponse<StockMarketIndex> getStockMarketIndexList() {
+
+        return getStockMarketIndexList(null);
     }
 
-    public List<StockMarketIndex> getStockMarketIndexList(StockMarketIndexApiRequest request) {
+    public DataGoKrApiResponse<StockMarketIndex> getStockMarketIndexList(StockMarketIndexApiRequest request) {
         DataGoKrApiResponse<StockMarketIndex> stockMarketIndexResponse = call(
                 properties.stockMarketEndpoint(),
                 request,
@@ -33,7 +32,9 @@ public class DataGoKrApiService {
                 }
         );
 
-        return getList(stockMarketIndexResponse);
+        log.info("stockMarketIndexResponse : {}", stockMarketIndexResponse);
+
+        return stockMarketIndexResponse;
     }
 
     private <T> DataGoKrApiResponse<T> call(
@@ -58,7 +59,9 @@ public class DataGoKrApiService {
     }
 
     private void appendQueryParams(StockMarketIndexApiRequest request, UriBuilder builder) {
-        if (request == null) return;
+        if (request == null) {
+            return;
+        }
 
         request.toQueryParams()
                 .keySet()
@@ -70,15 +73,5 @@ public class DataGoKrApiService {
                 );
     }
 
-    private <T> List<T> getList(DataGoKrApiResponse<T> response) {
-        if (isResponseError(response)) {
-            log.error("response : {}", response);
-            return List.of();
-        }
-        return response.getItem();
-    }
 
-    private <T> boolean isResponseError(DataGoKrApiResponse<T> response) {
-        return !"00".equals(response.getResultCode());
-    }
 }
