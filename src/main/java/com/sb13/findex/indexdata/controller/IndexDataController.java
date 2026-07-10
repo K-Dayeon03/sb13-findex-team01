@@ -1,15 +1,20 @@
 package com.sb13.findex.indexdata.controller;
 
 import com.sb13.findex.indexdata.dto.CursorPageResponse;
+import com.sb13.findex.indexdata.dto.IndexDataCreateRequest;
 import com.sb13.findex.indexdata.dto.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.service.IndexDataService;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +28,13 @@ public class IndexDataController {
     public IndexDataController(IndexDataService indexDataService) {
         this.indexDataService = indexDataService;
     }
+
+    @PostMapping
+    public ResponseEntity<Long> createIndexData(@Valid @RequestBody IndexDataCreateRequest request) {
+        Long savedId = indexDataService.createIndexData(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
+    }
+
     @GetMapping
     public CursorPageResponse<IndexDataResponse> search(
             @RequestParam(required = false) Long indexInfoId,

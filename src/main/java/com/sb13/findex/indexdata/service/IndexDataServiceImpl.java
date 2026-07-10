@@ -1,12 +1,16 @@
 package com.sb13.findex.indexdata.service;
 
+import com.sb13.findex.entity.IndexInfo;
 import com.sb13.findex.indexdata.dto.CursorPageResponse;
+import com.sb13.findex.indexdata.dto.IndexDataCreateRequest;
 import com.sb13.findex.indexdata.dto.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.dto.IndexDataSortField;
 import com.sb13.findex.indexdata.entity.IndexData;
+import com.sb13.findex.indexdata.entity.IndexType;
 import com.sb13.findex.indexdata.mapper.IndexDataMapper;
 import com.sb13.findex.indexdata.repository.IndexDataRepository;
+import com.sb13.findex.repository.IndexInfoRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +22,41 @@ public class IndexDataServiceImpl implements IndexDataService {
     private static final int DEFAULT_SIZE = 10;
 
     private final IndexDataRepository indexDataRepository;
+    private final IndexInfoRepository indexInfoRepository;
 
-    public IndexDataServiceImpl(IndexDataRepository indexDataRepository) {
+    public IndexDataServiceImpl(IndexDataRepository indexDataRepository, IndexInfoRepository indexInfoRepository) {
         this.indexDataRepository = indexDataRepository;
+        this.indexInfoRepository = indexInfoRepository;
     }
+
+    @Override
+    @Transactional
+    public Long createIndexData(IndexDataCreateRequest request) {
+        IndexInfo indexInfo = indexInfoRepository.findById(request.indexInfoId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 정보입니다. ID: " + request.indexInfoId()));
+
+        if (indexDataRepository.existsByIndexInfoIdAndBaseDate(request.indexInfoId(), request.baseDate())) {
+            throw new IllegalArgumentException("해당 날짜의 지수 데이터가 이미 존재합니다.");
+        }
+
+        IndexData indexData = IndexData.builder()
+            .indexInfo(indexInfo)
+            .baseDate(request.baseDate())
+            .indexType(IndexType.valueOf(request.sourceType()))
+            .marketPrice(request.marketPrice())
+            .closingPrice(request.closingPrice())
+            .highPrice(request.highPrice())
+            .lowPrice(request.lowPrice())
+            .versus(request.versus())
+            .fluctuationRate(request.fluctuationRate())
+            .tradingQuantity(request.tradingQuantity())
+            .tradingPrice(request.tradingPrice())
+            .marketTotalAmount(request.marketTotalAmount())
+            .build();
+
+        return indexDataRepository.save(indexData).getId();
+    }
+
     /*
     * Repository에서 size보다 1개 더 조회한 뒤,
     *  Service에서 실제 응답 데이터는 size만큼만 자릅니다.
