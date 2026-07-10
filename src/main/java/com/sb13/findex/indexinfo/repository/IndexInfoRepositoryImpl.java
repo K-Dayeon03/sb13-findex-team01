@@ -273,11 +273,13 @@ public class IndexInfoRepositoryImpl
             return true;
         }
 
-        if ("asc".equalsIgnoreCase(sortDirection)) {
+        String direction = sortDirection.strip();
+
+        if ("asc".equalsIgnoreCase(direction)) {
             return true;
         }
 
-        if ("desc".equalsIgnoreCase(sortDirection)) {
+        if ("desc".equalsIgnoreCase(direction)) {
             return false;
         }
 

@@ -17,9 +17,15 @@ public enum IndexInfoSortField {
     public static IndexInfoSortField from(
             String value
     ) {
+        if (value == null || value.isBlank()) {
+            return INDEX_NAME;
+        }
+
+        String cleanValue = value.strip();
+
         return Arrays.stream(values())
                 .filter(sortField ->
-                        sortField.value.equalsIgnoreCase(value)
+                        sortField.value.equalsIgnoreCase(cleanValue)
                 )
                 .findFirst()
                 .orElseThrow(() ->
