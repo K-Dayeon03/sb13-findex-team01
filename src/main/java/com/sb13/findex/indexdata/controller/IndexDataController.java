@@ -1,6 +1,7 @@
 package com.sb13.findex.indexdata.controller;
 
 import com.sb13.findex.indexdata.dto.CursorPageResponse;
+import com.sb13.findex.indexdata.dto.IndexDataCreateCommand;
 import com.sb13.findex.indexdata.dto.IndexDataCreateRequest;
 import com.sb13.findex.indexdata.dto.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
@@ -29,11 +30,14 @@ public class IndexDataController {
         this.indexDataService = indexDataService;
     }
 
-    @PostMapping
-    public ResponseEntity<Long> createIndexData(@Valid @RequestBody IndexDataCreateRequest request) {
-        Long savedId = indexDataService.createIndexData(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
-    }
+  @PostMapping
+  public ResponseEntity<IndexDataResponse> createIndexData(@Valid @RequestBody IndexDataCreateRequest request) {
+    IndexDataCreateCommand command = IndexDataCreateCommand.from(request);
+
+    IndexDataResponse response = indexDataService.createIndexData(command);
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
 
     @GetMapping
     public CursorPageResponse<IndexDataResponse> search(

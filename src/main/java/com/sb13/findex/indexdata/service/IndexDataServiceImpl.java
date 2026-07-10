@@ -2,7 +2,7 @@ package com.sb13.findex.indexdata.service;
 
 import com.sb13.findex.entity.IndexInfo;
 import com.sb13.findex.indexdata.dto.CursorPageResponse;
-import com.sb13.findex.indexdata.dto.IndexDataCreateRequest;
+import com.sb13.findex.indexdata.dto.IndexDataCreateCommand;
 import com.sb13.findex.indexdata.dto.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.dto.IndexDataSortField;
@@ -31,30 +31,48 @@ public class IndexDataServiceImpl implements IndexDataService {
 
     @Override
     @Transactional
-    public Long createIndexData(IndexDataCreateRequest request) {
-        IndexInfo indexInfo = indexInfoRepository.findById(request.indexInfoId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 정보입니다. ID: " + request.indexInfoId()));
+    public IndexDataResponse createIndexData(IndexDataCreateCommand command) {
+        IndexInfo indexInfo = indexInfoRepository.findById(command.indexInfoId())
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 정보입니다. ID: " + command.indexInfoId()));
 
-        if (indexDataRepository.existsByIndexInfoIdAndBaseDate(request.indexInfoId(), request.baseDate())) {
+        if (indexDataRepository.existsByIndexInfoIdAndBaseDate(command.indexInfoId(), command.baseDate())) {
             throw new IllegalArgumentException("해당 날짜의 지수 데이터가 이미 존재합니다.");
         }
 
         IndexData indexData = IndexData.builder()
             .indexInfo(indexInfo)
-            .baseDate(request.baseDate())
-            .indexType(IndexType.valueOf(request.sourceType()))
-            .marketPrice(request.marketPrice())
-            .closingPrice(request.closingPrice())
-            .highPrice(request.highPrice())
-            .lowPrice(request.lowPrice())
-            .versus(request.versus())
-            .fluctuationRate(request.fluctuationRate())
-            .tradingQuantity(request.tradingQuantity())
-            .tradingPrice(request.tradingPrice())
-            .marketTotalAmount(request.marketTotalAmount())
+            .baseDate(command.baseDate())
+            .indexType(IndexType.valueOf(command.sourceType()))
+            .marketPrice(command.marketPrice())
+            .closingPrice(command.closingPrice())
+            .highPrice(command.highPrice())
+            .lowPrice(command.lowPrice())
+            .versus(command.versus())
+            .fluctuationRate(command.fluctuationRate())
+            .tradingQuantity(command.tradingQuantity())
+            .tradingPrice(command.tradingPrice())
+            .marketTotalAmount(command.marketTotalAmount())
             .build();
 
-        return indexDataRepository.save(indexData).getId();
+        IndexData savedData = indexDataRepository.save(indexData);
+
+        return new IndexDataResponse(
+            savedData.getId(),
+            savedData.getIndexInfo().getId(),
+            savedData.getIndexInfo().getIndexClassification(),
+            savedData.getIndexInfo().getIndexName(),
+            savedData.getBaseDate(),
+            savedData.getIndexType(),
+            savedData.getMarketPrice(),
+            savedData.getClosingPrice(),
+            savedData.getHighPrice(),
+            savedData.getLowPrice(),
+            savedData.getVersus(),
+            savedData.getFluctuationRate(),
+            savedData.getTradingQuantity(),
+            savedData.getTradingPrice(),
+            savedData.getMarketTotalAmount()
+        );
     }
 
     /*
