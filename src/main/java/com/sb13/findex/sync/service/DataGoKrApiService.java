@@ -60,6 +60,12 @@ public class DataGoKrApiService {
 
     private void appendQueryParams(StockMarketIndexApiRequest request, UriBuilder builder) {
         if (request == null) {
+            // 페이지 건수 기본 설정 않을 시 사용합니다.
+            /*
+            builder.queryParam(
+                    "numOfRows",10_000
+            );
+            */
             return;
         }
 

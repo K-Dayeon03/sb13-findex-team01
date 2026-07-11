@@ -51,9 +51,9 @@ public record DataGoKrApiResponse<T>(
     public List<T> getItem() {
         if (
                 response == null ||
-                response.body == null ||
-                response.body.items == null ||
-                response.body.items.item == null
+                        response.body == null ||
+                        response.body.items == null ||
+                        response.body.items.item == null
         ) {
             return List.of();
         }
@@ -70,15 +70,29 @@ public record DataGoKrApiResponse<T>(
     }
 
     public Integer getNumOfRows() {
-        return response.body().numOfRows();
+        if (response == null || response.body == null) {
+            return null;
+        }
+
+        return response.body.numOfRows;
     }
 
     public Integer getPageNo() {
-        return response.body().pageNo();
+        if (response == null || response.body == null) {
+            return null;
+        }
+        return response.body.pageNo;
     }
 
     public Integer getTotalPages() {
-        return response.body().totalCount() / response.body().numOfRows();
+        if (
+                getNumOfRows() == null ||
+                response.body.totalCount == null
+        ) {
+            return null;
+        }
+
+        return response.body.totalCount / getNumOfRows();
     }
 
 }
