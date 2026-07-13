@@ -1,4 +1,4 @@
-package com.sb13.findex.indexdata.dto;
+package com.sb13.findex.indexdata.dto.response;
 
 import com.sb13.findex.indexdata.entity.IndexType;
 

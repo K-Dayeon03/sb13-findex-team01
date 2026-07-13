@@ -1,4 +1,4 @@
-package com.sb13.findex.indexdata.dto;
+package com.sb13.findex.indexdata.dto.condition;
 
 import java.util.Arrays;
 //정렬 가능 필드만 허용

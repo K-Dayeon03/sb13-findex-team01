@@ -49,4 +49,39 @@ public class IndexInfo extends BaseEntity {
     private boolean favorite;
 
 
+    public boolean isUserSource() {
+        return this.sourceType == SourceType.USER;
+    }
+
+    public boolean isOpenApiSource() {
+        return this.sourceType == SourceType.OPEN_API;
+    }
+
+    public void updateByUser(
+            int employedItemsCount,
+            LocalDate basePointInTime,
+            BigDecimal baseIndex,
+            boolean favorite
+    ) {
+        this.employedItemsCount = employedItemsCount;
+        this.basePointInTime = basePointInTime;
+        this.baseIndex = baseIndex;
+        this.favorite = favorite;
+        this.sourceType = SourceType.USER;
+    }
+
+    public void updateByOpenApi(
+            int employedItemsCount,
+            LocalDate basePointInTime,
+            BigDecimal baseIndex
+    ) {
+        if (!isOpenApiSource()) {
+            return;
+        }
+
+        this.employedItemsCount = employedItemsCount;
+        this.basePointInTime = basePointInTime;
+        this.baseIndex = baseIndex;
+    }
+
 }

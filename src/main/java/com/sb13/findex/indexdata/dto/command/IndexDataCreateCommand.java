@@ -1,4 +1,6 @@
-package com.sb13.findex.indexdata.dto;
+package com.sb13.findex.indexdata.dto.command;
+
+import com.sb13.findex.indexdata.dto.request.IndexDataCreateRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -6,7 +8,6 @@ import java.time.LocalDate;
 public record IndexDataCreateCommand(
     Long indexInfoId,
     LocalDate baseDate,
-    String sourceType,
     BigDecimal marketPrice,
     BigDecimal closingPrice,
     BigDecimal highPrice,
@@ -22,7 +23,6 @@ public record IndexDataCreateCommand(
     return new IndexDataCreateCommand(
         request.indexInfoId(),
         request.baseDate(),
-        request.sourceType(),
         request.marketPrice(),
         request.closingPrice(),
         request.highPrice(),

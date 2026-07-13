@@ -1,10 +1,10 @@
 package com.sb13.findex.indexdata.controller;
 
-import com.sb13.findex.indexdata.dto.CursorPageResponse;
-import com.sb13.findex.indexdata.dto.IndexDataCreateCommand;
-import com.sb13.findex.indexdata.dto.IndexDataCreateRequest;
-import com.sb13.findex.indexdata.dto.IndexDataResponse;
-import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
+import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
+import com.sb13.findex.indexdata.dto.command.IndexDataCreateCommand;
+import com.sb13.findex.indexdata.dto.request.IndexDataCreateRequest;
+import com.sb13.findex.indexdata.dto.response.IndexDataResponse;
+import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.service.IndexDataService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
