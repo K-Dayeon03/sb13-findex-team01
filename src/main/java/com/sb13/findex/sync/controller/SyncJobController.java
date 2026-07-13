@@ -1,7 +1,7 @@
 package com.sb13.findex.sync.controller;
 
 
-import com.sb13.findex.indexdata.dto.CursorPageResponse;
+import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
 import com.sb13.findex.sync.dto.request.SyncJobSearchRequest;
 import com.sb13.findex.sync.dto.response.SyncJobDto;
 import com.sb13.findex.sync.service.SyncJobService;
