@@ -101,4 +101,5 @@ public class IndexInfo extends BaseEntity {
                 .favorite(favorite)
                 .build();
     }
+
 }

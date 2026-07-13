@@ -1,4 +1,4 @@
-package com.sb13.findex.indexdata.dto;
+package com.sb13.findex.indexdata.dto.response;
 
 import java.util.List;
 //커서 페이지 응답을 감싸는 DTO

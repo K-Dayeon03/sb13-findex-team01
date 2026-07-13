@@ -1,4 +1,4 @@
-package com.sb13.findex.indexdata.dto;
+package com.sb13.findex.indexdata.dto.condition;
 
 import java.time.LocalDate;
 //“조회 조건을 한 묶음으로 담는 DTO”

@@ -1,6 +1,6 @@
 package com.sb13.findex.indexdata.repository;
 
-import com.sb13.findex.indexdata.dto.IndexDataSearchCondition;
+import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.entity.IndexData;
 
 import java.util.List;
