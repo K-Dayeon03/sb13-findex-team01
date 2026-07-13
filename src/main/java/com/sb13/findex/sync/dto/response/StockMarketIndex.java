@@ -1,5 +1,7 @@
 package com.sb13.findex.sync.dto.response;
 
+import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
+import com.sb13.findex.indexinfo.entity.IndexInfo;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -146,5 +148,38 @@ public record StockMarketIndex(
         }
         return LocalDate.parse(basPntm, BASIC_ISO_DATE_FORMATTER);
     }
+
+    public IndexDataOpenApiCommand toIndexDataCommand(IndexInfo indexInfo){
+        return new IndexDataOpenApiCommand(
+              indexInfo,
+              parseBasDt(),
+              parseBigDecimal(mkp),
+              parseBigDecimal(clpr),
+              parseBigDecimal(hipr),
+              parseBigDecimal(lopr),
+              parseBigDecimal(vs),
+              parseBigDecimal(fltRt),
+              parseLong(trqu),
+              parseLong(trPrc),
+              parseLong(lstgMrktTotAmt)
+        );
+    }
+
+    public BigDecimal parseBigDecimal(String value){
+        if(!StringUtils.hasText(value)){
+            return null;
+        }
+
+        return new BigDecimal(value);
+    }
+
+    public Long parseLong(String value){
+        if(!StringUtils.hasText(value)){
+            return null;
+        }
+
+        return Long.parseLong(value);
+    }
+
 
 }

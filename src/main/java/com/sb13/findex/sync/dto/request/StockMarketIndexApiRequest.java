@@ -3,6 +3,8 @@ package com.sb13.findex.sync.dto.request;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.time.LocalDate;
+
 /**
  * 주가지수시세 요청 파라미터입니다.
  *
@@ -110,107 +112,162 @@ import org.springframework.util.MultiValueMap;
  *                            <p>항목설명: 전년말대비 등락률이 검색값보다 작은 데이터를 검색</p>
  */
 public record StockMarketIndexApiRequest(
-        Integer numOfRows,
-        Integer pageNo,
-        String resultType,
-        String serviceKey,
-        String basDt,
-        String beginBasDt,
-        String endBasDt,
-        String likeBasDt,
-        String idxNm,
-        String likeIdxNm,
-        String beginEpyItmsCnt,
-        String endEpyItmsCnt,
-        String beginFltRt,
-        String endFltRt,
-        String beginTrqu,
-        String endTrqu,
-        String beginTrPrc,
-        String endTrPrc,
-        String beginLstgMrktTotAmt,
-        String endLstgMrktTotAmt,
-        String beginLsYrEdVsFltRg,
-        String endLsYrEdVsFltRg,
-        String beginLsYrEdVsFltRt,
-        String endLsYrEdVsFltRt
+      Integer numOfRows,
+      Integer pageNo,
+      String resultType,
+      String serviceKey,
+      String basDt,
+      String beginBasDt,
+      String endBasDt,
+      String likeBasDt,
+      String idxNm,
+      String likeIdxNm,
+      String beginEpyItmsCnt,
+      String endEpyItmsCnt,
+      String beginFltRt,
+      String endFltRt,
+      String beginTrqu,
+      String endTrqu,
+      String beginTrPrc,
+      String endTrPrc,
+      String beginLstgMrktTotAmt,
+      String endLstgMrktTotAmt,
+      String beginLsYrEdVsFltRg,
+      String endLsYrEdVsFltRg,
+      String beginLsYrEdVsFltRt,
+      String endLsYrEdVsFltRt
 ) {
 
-    public static StockMarketIndexApiRequest ofPage(Integer numOfRows, Integer pageNo) {
-        return new StockMarketIndexApiRequest(
-                numOfRows,
-                pageNo,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
+   public static StockMarketIndexApiRequest ofPage(Integer numOfRows, Integer pageNo) {
+      return new StockMarketIndexApiRequest(
+            numOfRows,
+            pageNo,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+      );
+   }
+
+   public static StockMarketIndexApiRequest ofExactIndexName(
+         LocalDate baseDateFrom,
+         LocalDate baseDateTo,
+         String indexName) {
+      return ofExactIndexNamePage(
+            null,
+            null,
+            baseDateFrom,
+            baseDateTo,
+            indexName
+      );
+   }
+
+   public static StockMarketIndexApiRequest ofExactIndexNamePage(
+         Integer numOfRows,
+         Integer pageNo,
+         LocalDate baseDateFrom,
+         LocalDate baseDateTo,
+         String indexName) {
+      return new StockMarketIndexApiRequest(
+            numOfRows,
+            pageNo,
+            null,
+            null,
+            null,
+            convertDateToString(baseDateFrom),
+            convertDateToString(baseDateTo),
+            null,
+            indexName,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+      );
+   }
+
+   private static String convertDateToString(LocalDate baseDateFrom) {
+      if (baseDateFrom == null) {
+         return null;
+      }
+
+      return baseDateFrom.toString();
+   }
 
 
-    public MultiValueMap<String, String> toQueryParams() {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+   public MultiValueMap<String, String> toQueryParams() {
+      MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
-        add(params, "numOfRows", numOfRows);
-        add(params, "pageNo", pageNo);
+      add(params, "numOfRows", numOfRows);
+      add(params, "pageNo", pageNo);
 
-        // serviceKey, resultType은 ApiService에서 공통으로 넣는 것을 추천
-        // add(params, "resultType", resultType);
-        // add(params, "serviceKey", serviceKey);
+      // serviceKey, resultType은 ApiService에서 공통으로 넣는 것을 추천
+      // add(params, "resultType", resultType);
+      // add(params, "serviceKey", serviceKey);
 
-        add(params, "basDt", basDt);
-        add(params, "beginBasDt", beginBasDt);
-        add(params, "endBasDt", endBasDt);
-        add(params, "likeBasDt", likeBasDt);
-        add(params, "idxNm", idxNm);
-        add(params, "likeIdxNm", likeIdxNm);
-        add(params, "beginEpyItmsCnt", beginEpyItmsCnt);
-        add(params, "endEpyItmsCnt", endEpyItmsCnt);
-        add(params, "beginFltRt", beginFltRt);
-        add(params, "endFltRt", endFltRt);
-        add(params, "beginTrqu", beginTrqu);
-        add(params, "endTrqu", endTrqu);
-        add(params, "beginTrPrc", beginTrPrc);
-        add(params, "endTrPrc", endTrPrc);
-        add(params, "beginLstgMrktTotAmt", beginLstgMrktTotAmt);
-        add(params, "endLstgMrktTotAmt", endLstgMrktTotAmt);
-        add(params, "beginLsYrEdVsFltRg", beginLsYrEdVsFltRg);
-        add(params, "endLsYrEdVsFltRg", endLsYrEdVsFltRg);
-        add(params, "beginLsYrEdVsFltRt", beginLsYrEdVsFltRt);
-        add(params, "endLsYrEdVsFltRt", endLsYrEdVsFltRt);
+      add(params, "basDt", basDt);
+      add(params, "beginBasDt", beginBasDt);
+      add(params, "endBasDt", endBasDt);
+      add(params, "likeBasDt", likeBasDt);
+      add(params, "idxNm", idxNm);
+      add(params, "likeIdxNm", likeIdxNm);
+      add(params, "beginEpyItmsCnt", beginEpyItmsCnt);
+      add(params, "endEpyItmsCnt", endEpyItmsCnt);
+      add(params, "beginFltRt", beginFltRt);
+      add(params, "endFltRt", endFltRt);
+      add(params, "beginTrqu", beginTrqu);
+      add(params, "endTrqu", endTrqu);
+      add(params, "beginTrPrc", beginTrPrc);
+      add(params, "endTrPrc", endTrPrc);
+      add(params, "beginLstgMrktTotAmt", beginLstgMrktTotAmt);
+      add(params, "endLstgMrktTotAmt", endLstgMrktTotAmt);
+      add(params, "beginLsYrEdVsFltRg", beginLsYrEdVsFltRg);
+      add(params, "endLsYrEdVsFltRg", endLsYrEdVsFltRg);
+      add(params, "beginLsYrEdVsFltRt", beginLsYrEdVsFltRt);
+      add(params, "endLsYrEdVsFltRt", endLsYrEdVsFltRt);
 
-        return params;
-    }
+      return params;
+   }
 
-    private static void add(MultiValueMap<String, String> params, String name, Object value) {
-        if (value == null) {
-            return;
-        }
+   private static void add(MultiValueMap<String, String> params, String name, Object value) {
+      if (value == null) {
+         return;
+      }
 
-        String stringValue = String.valueOf(value);
+      String stringValue = String.valueOf(value);
 
-        if (stringValue.isBlank()) {
-            return;
-        }
+      if (stringValue.isBlank()) {
+         return;
+      }
 
-        params.add(name, stringValue);
-    }
+      params.add(name, stringValue);
+   }
 }
