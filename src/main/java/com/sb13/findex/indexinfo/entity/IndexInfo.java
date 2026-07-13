@@ -10,6 +10,8 @@ import java.time.*;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "index_info",
@@ -48,5 +50,19 @@ public class IndexInfo extends BaseEntity {
     @Column(name = "favorite")
     private boolean favorite;
 
+    public void update(
+            Integer employedItemsCount,
+            LocalDate basePointInTime,
+            BigDecimal baseIndex,
+            Boolean favorite
+    ) {
+        if(employedItemsCount != null) this.employedItemsCount = employedItemsCount;
+
+        if (basePointInTime != null) this.basePointInTime = basePointInTime;
+
+        if (baseIndex != null) this.baseIndex = baseIndex;
+
+        if (favorite != null) this.favorite = favorite;
+    }
 
 }
