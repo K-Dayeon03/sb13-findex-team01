@@ -11,6 +11,8 @@ import com.sb13.findex.sync.repository.SyncJobRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -80,8 +82,22 @@ public class SyncJobServiceImpl implements SyncJobService {
         SyncJobSortField sortField = getSortField(sortFieldValue);
 
         return switch (sortField) {
-            case TARGET_DATE -> syncJob.getTargetDate().toString();
-            case JOB_TIME -> syncJob.getJobTime().toString();
+            case TARGET_DATE -> {
+                LocalDate targetDate = syncJob.getTargetDate();
+                if (targetDate == null) {
+                    throw new IllegalStateException(
+                            "targetDate가 null인 SyncJob은 커서 정렬에 사용할 수 없습니다. id=" + syncJob.getId());
+                }
+                yield targetDate.toString();
+            }
+            case  JOB_TIME -> {
+                LocalDateTime jobTime = syncJob.getJobTime();
+                if (jobTime == null) {
+                    throw new IllegalStateException(
+                            "jobTime이 null인 SyncJob은 커서 정렬에 사용할 수 없습니다. id=" + syncJob.getId());
+                }
+                yield jobTime.toString();
+            }
         };
     }
 

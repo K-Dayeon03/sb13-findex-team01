@@ -2,6 +2,7 @@ package com.sb13.findex.sync.repository;
 
 
 import com.sb13.findex.sync.dto.request.SyncJobSearchCommand;
+import com.sb13.findex.sync.dto.request.SyncJobSortField;
 import com.sb13.findex.sync.entity.SyncJob;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,22 +129,19 @@ public class SyncJobRepositoryImpl implements SyncJobRepositoryCustom{
     }
 
     private String resolveSortField(String sortField){
-        if (sortField == null || sortField.isEmpty()) {
-            return "s.jobTime";
-        }
-
-        return switch (sortField){
-            case "targetDate" -> "s.targetDate";
-            case "jobTime" -> "s.jobTime";
-            default -> "s.jobTime";
-        };
+        return SyncJobSortField.from(sortField).getQueryField();
     }
 
     private Object convertCursorValue(String sortField, String cursor){
-        if ("targetDate".equals(sortField)) {
-            return LocalDate.parse(cursor);
+        SyncJobSortField field = SyncJobSortField.from(sortField);
+        try {
+            return switch (field) {
+                case TARGET_DATE -> LocalDate.parse(cursor);
+                case JOB_TIME -> LocalDateTime.parse(cursor);
+            };
+        }catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("유효하지 않은 cursor 값입니다: " + cursor);
         }
-        return LocalDateTime.parse(cursor);
     }
 
     private boolean isDesc(String sortDirection){
