@@ -6,7 +6,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5431/findex
+    url: jdbc:postgresql://localhost:5432/findex
     username: findex
     password: findex1234
 

@@ -3,8 +3,10 @@ package com.sb13.findex.indexdata.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.ComparableExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb13.findex.indexinfo.entity.QIndexInfo;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
@@ -14,6 +16,9 @@ import com.sb13.findex.indexdata.entity.QIndexData;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -66,6 +71,26 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
         )
         .fetch();
   }
+  /*
+  * 즐겨찾기된 지수들 중에서
+  * 각 지수별 가장 최신 baseDate의 IndexData만 가져온다.
+  * */
+  @Override
+  public List<IndexData> findLatestDataForFavoriteIndexes() {
+    QIndexData indexData = QIndexData.indexData;
+    QIndexData subIndexData = new QIndexData("subIndexData");
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    return queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(
+                    indexInfo.favorite.isTrue(),
+                    latestBaseDateCondition(indexData, subIndexData)
+            )
+            .orderBy(indexInfo.indexName.asc())
+            .fetch();
+  }
 
   @Override
   public long count(IndexDataSearchCondition condition) {
@@ -78,6 +103,17 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
         .fetchOne();
 
     return count == null ? 0L : count;
+  }
+  private BooleanExpression latestBaseDateCondition(
+          QIndexData indexData,
+          QIndexData subIndexData
+  ) {
+    return indexData.baseDate.eq(
+            JPAExpressions
+                    .select(subIndexData.baseDate.max())
+                    .from(subIndexData)
+                    .where(subIndexData.indexInfo.id.eq(indexData.indexInfo.id))
+    );
   }
 
   private BooleanBuilder filterCondition(IndexDataSearchCondition condition) {
@@ -266,5 +302,112 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
 
   private boolean isAscending(String sortDirection) {
     return "asc".equalsIgnoreCase(sortDirection);
+  }
+
+  @Override
+  public Optional<IndexData> findNearestDataOnOrBefore(
+          Long indexInfoId,
+          LocalDate targetDate
+  ) {
+    QIndexData indexData = QIndexData.indexData;
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    IndexData result = queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(
+                    indexData.indexInfo.id.eq(indexInfoId),
+                    indexData.baseDate.loe(targetDate)
+            )
+            .orderBy(
+                    indexData.baseDate.desc(),
+                    indexData.id.desc()
+            )
+            .limit(1)
+            .fetchOne();
+
+    return Optional.ofNullable(result);
+  }
+
+  @Override
+  public List<IndexData> findNearestDataOnOrBeforeByIndexInfoIds(
+          Map<Long, LocalDate> targetDatesByIndexInfoId
+  ) {
+    if (targetDatesByIndexInfoId.isEmpty()) {
+      return List.of();
+    }
+
+    QIndexData indexData = QIndexData.indexData;
+    QIndexData subIndexData = new QIndexData("subIndexData");
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    targetDatesByIndexInfoId.forEach((indexInfoId, targetDate) -> {
+      builder.or(
+              indexData.indexInfo.id.eq(indexInfoId)
+                      .and(indexData.baseDate.eq(
+                              JPAExpressions
+                                      .select(subIndexData.baseDate.max())
+                                      .from(subIndexData)
+                                      .where(
+                                              subIndexData.indexInfo.id.eq(indexInfoId),
+                                              subIndexData.baseDate.loe(targetDate)
+                                      )
+                      ))
+      );
+    });
+
+    return queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(builder)
+            .fetch();
+  }
+  @Override
+  public List<IndexData> findDataByIndexInfoIdAndBaseDateBetween(
+          Long indexInfoId,
+          LocalDate startDate,
+          LocalDate endDate
+  ) {
+    QIndexData indexData = QIndexData.indexData;
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    return queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(
+                    indexData.indexInfo.id.eq(indexInfoId),
+                    indexData.baseDate.goe(startDate),
+                    indexData.baseDate.loe(endDate)
+            )
+            .orderBy(
+                    indexData.baseDate.asc(),
+                    indexData.id.asc()
+            )
+            .fetch();
+  }
+  //indexinfoid가 있으면 그 지수만,
+  //없으면 전체 지수 기준으로 각 지수별 최신 데이터를 가져옴
+  @Override
+  public List<IndexData> findLatestDataForRanking(Long indexInfoId) {
+    QIndexData indexData = QIndexData.indexData;
+    QIndexData subIndexData = new QIndexData("subIndexData");
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    if (indexInfoId != null) {
+      builder.and(indexData.indexInfo.id.eq(indexInfoId));
+    }
+
+    builder.and(latestBaseDateCondition(indexData, subIndexData));
+
+    return queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(builder)
+            .orderBy(indexInfo.indexName.asc())
+            .fetch();
   }
 }

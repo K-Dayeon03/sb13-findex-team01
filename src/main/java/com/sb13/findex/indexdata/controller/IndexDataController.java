@@ -1,13 +1,16 @@
 package com.sb13.findex.indexdata.controller;
-
+import com.sb13.findex.indexdata.dto.response.*;
 import com.sb13.findex.indexdata.dto.command.IndexDataUpdateCommand;
 import com.sb13.findex.indexdata.dto.request.IndexDataUpdateRequest;
 import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
 import com.sb13.findex.indexdata.dto.command.IndexDataCreateCommand;
 import com.sb13.findex.indexdata.dto.request.IndexDataCreateRequest;
-import com.sb13.findex.indexdata.dto.response.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
+import com.sb13.findex.indexdata.entity.ChartPeriodType;
 import com.sb13.findex.indexdata.service.IndexDataService;
+import com.sb13.findex.indexdata.entity.UnitPeriodType;
+import com.sb13.findex.indexdata.service.DashboardIndexDataService;
+import java.util.List;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,6 +18,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,12 +33,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/index-data")
+@Validated
 public class IndexDataController {
 
     private final IndexDataService indexDataService;
+    private final DashboardIndexDataService dashboardIndexDataService;
 
-    public IndexDataController(IndexDataService indexDataService) {
+    public IndexDataController(
+            IndexDataService indexDataService,
+            DashboardIndexDataService dashboardIndexDataService
+    ) {
         this.indexDataService = indexDataService;
+        this.dashboardIndexDataService = dashboardIndexDataService;
     }
 
   @PostMapping
@@ -126,4 +138,31 @@ public class IndexDataController {
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(csv);
     }
+    @GetMapping("/performance/favorite")
+    public List<IndexPerformanceResponse> getFavoritePerformance(
+            @RequestParam(defaultValue = "DAILY") UnitPeriodType periodType
+    ) {
+        return dashboardIndexDataService.getFavoritePerformance(periodType);
+    }
+    //지수차트
+    @GetMapping("/{id}/chart")
+    public IndexChartResponse getIndexChart(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "MONTHLY") ChartPeriodType periodType
+    ) {
+        return dashboardIndexDataService.getIndexChart(id, periodType);
+    }
+    @GetMapping("/performance/rank")
+    public List<RankedIndexPerformanceResponse> getPerformanceRank(
+            @RequestParam(required = false) Long indexInfoId,
+            @RequestParam(defaultValue = "DAILY") UnitPeriodType periodType,
+            @RequestParam(defaultValue = "10") @Min(1) int limit
+    ) {
+        return dashboardIndexDataService.getPerformanceRank(
+                indexInfoId,
+                periodType,
+                limit
+        );
+    }
+
 }
