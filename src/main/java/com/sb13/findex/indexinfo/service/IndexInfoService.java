@@ -36,4 +36,8 @@ public interface IndexInfoService {
     // 지수 정보 요약 목록 조회
     List<IndexInfoSummaryResponse> findSummaries();
 
+    void saveOrUpdateOpenApiInfo(
+            IndexInfoCreateCommand command
+    );
+
 }

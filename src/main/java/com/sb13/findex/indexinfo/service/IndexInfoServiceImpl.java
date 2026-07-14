@@ -1,5 +1,6 @@
 package com.sb13.findex.indexinfo.service;
 
+import com.sb13.findex.indexdata.service.*;
 import com.sb13.findex.indexinfo.dto.command.*;
 import com.sb13.findex.indexinfo.dto.response.*;
 import com.sb13.findex.indexinfo.entity.*;
@@ -9,6 +10,7 @@ import com.sb13.findex.indexinfo.repository.*;
 import com.sb13.findex.indexinfo.utli.*;
 import com.sb13.findex.sync.entity.*;
 import com.sb13.findex.sync.service.*;
+import com.sb13.findex.sync.service.AutoSyncConfigService;
 import lombok.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
@@ -21,6 +23,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
 
     private final IndexInfoRepository indexInfoRepository;
     private final AutoSyncConfigService autoSyncConfigService;
+    private final IndexDataService indexDataService;
 
     @Override
     public CursorPageResponse<IndexInfoResponse> search(IndexInfoSearchCondition condition) {
@@ -122,9 +125,17 @@ public class IndexInfoServiceImpl implements IndexInfoService {
         IndexInfo indexInfo = indexInfoRepository.findById(id)
                 .orElseThrow(()-> new IndexInfoNotFoundException(id));
 
-        // TODO IndexData 삭제 메서드 추가 후 연결
-        // indexDataService.deleteAllByIndexInfoId(id);
+        // 지수 정보애 연결된 지수데이터 전체삭제
+        indexDataService.deleteByIndexInfoId(id);
 
+        // TODO: 자동 연동 담당자 메서드 추가 후 연결
+        // autoSyncConfigService.deleteByIndexInfoId(id);
+
+        // TODO:연동 작업 이력은 유지하고 지수정보 연관관계만 해제
+        // SyncJob 이력은 유지하고 삭제 대상 IndexInfo와의 연관관계만 해제
+        // syncJobService.disconnectIndexInfo(id);
+
+        // 지수정보 삭제
         indexInfoRepository.delete(indexInfo);
     }
 
@@ -141,6 +152,56 @@ public class IndexInfoServiceImpl implements IndexInfoService {
             case INDEX_NAME -> indexInfo.getIndexName();
             case EMPLOYED_ITEMS_COUNT -> String.valueOf(indexInfo.getEmployedItemsCount());
         };
+    }
+
+    @Override
+    @Transactional
+    public void saveOrUpdateOpenApiInfo(
+            IndexInfoCreateCommand command
+    ) {
+        String indexClassification =
+                command.indexClassification().strip();
+        String indexName =
+                command.indexName().strip();
+
+        Optional<IndexInfo> existingIndexInfo =
+                indexInfoRepository
+                        .findByIndexClassificationAndIndexName(
+                                indexClassification,
+                                indexName
+                        );
+
+        if (existingIndexInfo.isPresent()) {
+            IndexInfo indexInfo = existingIndexInfo.get();
+
+            indexInfo.updateByOpenApi(
+                    command.employedItemsCount(),
+                    command.basePointInTime(),
+                    command.baseIndex()
+            );
+
+            return;
+        }
+
+        IndexInfo indexInfo = IndexInfo.create(
+                indexClassification,
+                indexName,
+                command.employedItemsCount(),
+                command.basePointInTime(),
+                command.baseIndex(),
+                SourceType.OPEN_API,
+                false
+        );
+
+        IndexInfo savedIndexInfo =
+                indexInfoRepository.save(indexInfo);
+
+        autoSyncConfigService.create(
+                new AutoSyncConfigCommand(
+                        savedIndexInfo,
+                        false
+                )
+        );
     }
 
 }

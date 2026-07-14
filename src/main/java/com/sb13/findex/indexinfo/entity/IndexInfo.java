@@ -102,4 +102,16 @@ public class IndexInfo extends BaseEntity {
                 .build();
     }
 
+    // Open API 연동으로 갱신 가능한 지수정보만 수정
+    public void updateByOpenApi(
+            int employedItemsCount,
+            LocalDate basePointInTime,
+            BigDecimal baseIndex
+    ) {
+        this.employedItemsCount = employedItemsCount;
+        this.basePointInTime = basePointInTime;
+        this.baseIndex = baseIndex;
+    }
+
+
 }
