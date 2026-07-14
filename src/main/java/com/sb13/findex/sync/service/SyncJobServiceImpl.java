@@ -122,6 +122,15 @@ public class SyncJobServiceImpl implements SyncJobService {
                 .toList();
     }
 
+    @Override
+    public int detachIndexInfo(Long indexInfoId) {
+        if (indexInfoId == null) {
+            return 0;
+        }
+
+        return syncJobRepository.clearIndexInfoReferenceByIndexInfoId(indexInfoId);
+    }
+
     private IndexInfoKey getIndexInfoKey(IndexInfoCreateCommand command) {
         return new IndexInfoKey(command.indexClassification(), command.indexName());
     }

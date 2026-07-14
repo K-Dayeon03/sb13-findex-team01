@@ -16,4 +16,6 @@ public interface SyncJobService {
 
     List<SyncJobDto> indexInfoSaveAll(List<IndexInfoCreateCommand> infoCreateCommands, String worker);
 
+    int detachIndexInfo(Long indexInfoId);
+
 }
