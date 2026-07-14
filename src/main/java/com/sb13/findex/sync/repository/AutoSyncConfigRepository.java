@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, Long> {
+public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, Long>, AutoSyncConfigRepositoryCustom {
     // 배치 스케줄러가 자동 연동 대상(활성화된 설정)만 조회할 때 사용
     List<AutoSyncConfig> findByEnabled(boolean enabled);
 
