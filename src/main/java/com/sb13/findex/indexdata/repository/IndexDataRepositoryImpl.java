@@ -3,6 +3,7 @@ package com.sb13.findex.indexdata.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.ComparableExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
@@ -15,6 +16,7 @@ import com.sb13.findex.indexdata.entity.QIndexData;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -84,16 +86,7 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
             .join(indexData.indexInfo, indexInfo).fetchJoin()
             .where(
                     indexInfo.favorite.isTrue(),
-                    indexData.baseDate.eq(
-                            JPAExpressions
-                                    .select(subIndexData.baseDate.max())
-                                    .from(subIndexData)
-                                    .where(
-                                            subIndexData.indexInfo.id.eq(
-                                                    indexData.indexInfo.id
-                                            )
-                                    )
-                    )
+                    latestBaseDateCondition(indexData, subIndexData)
             )
             .orderBy(indexInfo.indexName.asc())
             .fetch();
@@ -110,6 +103,17 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
         .fetchOne();
 
     return count == null ? 0L : count;
+  }
+  private BooleanExpression latestBaseDateCondition(
+          QIndexData indexData,
+          QIndexData subIndexData
+  ) {
+    return indexData.baseDate.eq(
+            JPAExpressions
+                    .select(subIndexData.baseDate.max())
+                    .from(subIndexData)
+                    .where(subIndexData.indexInfo.id.eq(indexData.indexInfo.id))
+    );
   }
 
   private BooleanBuilder filterCondition(IndexDataSearchCondition condition) {
@@ -325,7 +329,41 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
     return Optional.ofNullable(result);
   }
 
+  @Override
+  public List<IndexData> findNearestDataOnOrBeforeByIndexInfoIds(
+          Map<Long, LocalDate> targetDatesByIndexInfoId
+  ) {
+    if (targetDatesByIndexInfoId.isEmpty()) {
+      return List.of();
+    }
 
+    QIndexData indexData = QIndexData.indexData;
+    QIndexData subIndexData = new QIndexData("subIndexData");
+    QIndexInfo indexInfo = QIndexInfo.indexInfo;
+
+    BooleanBuilder builder = new BooleanBuilder();
+
+    targetDatesByIndexInfoId.forEach((indexInfoId, targetDate) -> {
+      builder.or(
+              indexData.indexInfo.id.eq(indexInfoId)
+                      .and(indexData.baseDate.eq(
+                              JPAExpressions
+                                      .select(subIndexData.baseDate.max())
+                                      .from(subIndexData)
+                                      .where(
+                                              subIndexData.indexInfo.id.eq(indexInfoId),
+                                              subIndexData.baseDate.loe(targetDate)
+                                      )
+                      ))
+      );
+    });
+
+    return queryFactory
+            .selectFrom(indexData)
+            .join(indexData.indexInfo, indexInfo).fetchJoin()
+            .where(builder)
+            .fetch();
+  }
   @Override
   public List<IndexData> findDataByIndexInfoIdAndBaseDateBetween(
           Long indexInfoId,
@@ -363,18 +401,7 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
       builder.and(indexData.indexInfo.id.eq(indexInfoId));
     }
 
-    builder.and(
-            indexData.baseDate.eq(
-                    JPAExpressions
-                            .select(subIndexData.baseDate.max())
-                            .from(subIndexData)
-                            .where(
-                                    subIndexData.indexInfo.id.eq(
-                                            indexData.indexInfo.id
-                                    )
-                            )
-            )
-    );
+    builder.and(latestBaseDateCondition(indexData, subIndexData));
 
     return queryFactory
             .selectFrom(indexData)

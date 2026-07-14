@@ -17,10 +17,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
 @RequestMapping("/api/index-data")
+@Validated
 public class IndexDataController {
 
     private final IndexDataService indexDataService;
@@ -126,7 +128,7 @@ public class IndexDataController {
     public List<RankedIndexPerformanceResponse> getPerformanceRank(
             @RequestParam(required = false) Long indexInfoId,
             @RequestParam(defaultValue = "DAILY") UnitPeriodType periodType,
-            @RequestParam(defaultValue = "10") int limit
+            @RequestParam(defaultValue = "10") @Min(1) int limit
     ) {
         return dashboardIndexDataService.getPerformanceRank(
                 indexInfoId,

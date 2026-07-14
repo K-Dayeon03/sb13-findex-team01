@@ -1,5 +1,6 @@
 package com.sb13.findex.indexdata.service;
 
+import com.sb13.findex.global.exception.IndexDataNotFoundException;
 import com.sb13.findex.indexdata.dto.response.IndexPerformanceResponse;
 import com.sb13.findex.indexdata.entity.IndexData;
 import com.sb13.findex.indexdata.entity.UnitPeriodType;
@@ -8,8 +9,6 @@ import com.sb13.findex.indexdata.dto.response.ChartDataPointResponse;
 import com.sb13.findex.indexdata.dto.response.IndexChartResponse;
 import com.sb13.findex.indexdata.entity.ChartPeriodType;
 import com.sb13.findex.indexdata.dto.response.RankedIndexPerformanceResponse;
-import java.util.Comparator;
-import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -26,30 +30,13 @@ import java.util.Optional;
 public class DashboardIndexDataService {
 
     private final IndexDataRepository indexDataRepository;
-
     private Optional<IndexPerformanceResponse> calculatePerformance(
             IndexData currentData,
-            UnitPeriodType periodType
+            IndexData beforeData
     ) {
-        Long indexInfoId = currentData.getIndexInfo().getId();
-
-        LocalDate beforeDate = getBeforeDate(
-                currentData.getBaseDate(),
-                periodType
-        );
-
-        Optional<IndexData> beforeDataOptional =
-                indexDataRepository.findNearestDataOnOrBefore(
-                        indexInfoId,
-                        beforeDate
-                );
-
-        if (beforeDataOptional.isEmpty()) {
+        if (beforeData == null) {
             return Optional.empty();
         }
-
-        IndexData beforeData = beforeDataOptional.get();
-
         BigDecimal currentPrice = currentData.getClosingPrice();
         BigDecimal beforePrice = beforeData.getClosingPrice();
 
@@ -64,7 +51,7 @@ public class DashboardIndexDataService {
                 .multiply(BigDecimal.valueOf(100));
 
         return Optional.of(new IndexPerformanceResponse(
-                indexInfoId,
+                currentData.getIndexInfo().getId(),
                 currentData.getIndexInfo().getIndexClassification(),
                 currentData.getIndexInfo().getIndexName(),
                 versus,
@@ -84,15 +71,45 @@ public class DashboardIndexDataService {
             case MONTHLY -> currentDate.minusMonths(1);
         };
     }
+
     public List<IndexPerformanceResponse> getFavoritePerformance(
             UnitPeriodType periodType
     ) {
-        return indexDataRepository.findLatestDataForFavoriteIndexes()
-                .stream()
-                .map(currentData -> calculatePerformance(currentData, periodType))
+        List<IndexData> currentDataList =
+                indexDataRepository.findLatestDataForFavoriteIndexes();
+
+        Map<Long, IndexData> beforeDataByIndexInfoId = getBeforeDataByIndexInfoId(
+                currentDataList,
+                periodType
+        );
+
+        return currentDataList.stream()
+                .map(currentData -> calculatePerformance(
+                        currentData,
+                        beforeDataByIndexInfoId.get(currentData.getIndexInfo().getId())
+                ))
                 .flatMap(Optional::stream)
                 .toList();
     }
+
+    private Map<Long, IndexData> getBeforeDataByIndexInfoId(
+            List<IndexData> currentDataList,
+            UnitPeriodType periodType
+    ) {
+        Map<Long, LocalDate> beforeDatesByIndexInfoId = currentDataList.stream()
+                .collect(Collectors.toMap(
+                        currentData -> currentData.getIndexInfo().getId(),
+                        currentData -> getBeforeDate(currentData.getBaseDate(), periodType)
+                ));
+
+        return indexDataRepository.findNearestDataOnOrBeforeByIndexInfoIds(beforeDatesByIndexInfoId)
+                .stream()
+                .collect(Collectors.toMap(
+                        beforeData -> beforeData.getIndexInfo().getId(),
+                        Function.identity()
+                ));
+    }
+
     public IndexChartResponse getIndexChart(
             Long indexInfoId,
             ChartPeriodType periodType
@@ -100,9 +117,7 @@ public class DashboardIndexDataService {
         IndexData latestData = indexDataRepository.findNearestDataOnOrBefore(
                 indexInfoId,
                 LocalDate.now()
-        ).orElseThrow(() -> new IllegalArgumentException(
-                "지수 데이터가 존재하지 않습니다. indexInfoId=" + indexInfoId
-        ));
+        ).orElseThrow(() ->  new IndexDataNotFoundException(indexInfoId));
 
         LocalDate endDate = latestData.getBaseDate();
         LocalDate startDate = getChartStartDate(endDate, periodType);
@@ -210,18 +225,27 @@ public class DashboardIndexDataService {
             UnitPeriodType periodType,
             int limit
     ) {
-        List<IndexPerformanceResponse> performances =
-                indexDataRepository.findLatestDataForRanking(indexInfoId)
-                        .stream()
-                        .map(currentData -> calculatePerformance(currentData, periodType))
-                        .flatMap(Optional::stream)
-                        .sorted(
-                                Comparator.comparing(
-                                        IndexPerformanceResponse::fluctuationRate
-                                ).reversed()
-                        )
-                        .limit(limit)
-                        .toList();
+        List<IndexData> currentDataList =
+                indexDataRepository.findLatestDataForRanking(indexInfoId);
+
+        Map<Long, IndexData> beforeDataByIndexInfoId = getBeforeDataByIndexInfoId(
+                currentDataList,
+                periodType
+        );
+
+        List<IndexPerformanceResponse> performances = currentDataList.stream()
+                .map(currentData -> calculatePerformance(
+                        currentData,
+                        beforeDataByIndexInfoId.get(currentData.getIndexInfo().getId())
+                ))
+                .flatMap(Optional::stream)
+                .sorted(
+                        Comparator.comparing(
+                                IndexPerformanceResponse::fluctuationRate
+                        ).reversed()
+                )
+                .limit(limit)
+                .toList();
 
         List<RankedIndexPerformanceResponse> result = new ArrayList<>();
 

@@ -5,6 +5,7 @@ import com.sb13.findex.indexdata.entity.IndexData;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IndexDataRepositoryCustom {
@@ -34,6 +35,10 @@ public interface IndexDataRepositoryCustom {
     Optional<IndexData> findNearestDataOnOrBefore(
             Long indexInfoId,
             LocalDate targetDate);
+
+    List<IndexData> findNearestDataOnOrBeforeByIndexInfoIds(
+            Map<Long, LocalDate> targetDatesByIndexInfoId
+    );
 
     //전체지수 기준으로 지수성과 분석 량킹
     List<IndexData> findLatestDataForRanking(Long indexInfoId);

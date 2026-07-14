@@ -1,0 +1,21 @@
+## 로컬 개발 환경은 개인마다 다를 수 있으므로 별도 설정 파일로 분리합니다.
+## 사용 시 파일명의 .txt 확장자를 제거한 뒤 사용해주세요.
+## 본 파일은 예시 설정이므로, 각 작업자의 로컬 환경에 맞게 수정해서 사용하시면 됩니다.
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/findex
+    username: findex
+    password: findex1234
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+findex:
+  api:
+    service-key: ${DATA_GO_KR_SERVICE_KEY}
