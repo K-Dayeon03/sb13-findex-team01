@@ -20,8 +20,8 @@ findex:
     read-timeout: 30s
   external-api:
     # 한 번에 Executor에 제출하는 최대 작업 수
-    # 1~100 사이만 허용
-    fetch-batch-size: 100
+    # 1~50 사이만 허용
+    fetch-batch-size: 20
 
     executor:
       # 실제 동시 실행 수

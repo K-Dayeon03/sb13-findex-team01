@@ -1,6 +1,7 @@
 package com.sb13.findex.sync.service;
 
 
+import com.sb13.findex.global.config.ExternalApiProperties;
 import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
 import com.sb13.findex.indexinfo.dto.command.IndexInfoCreateCommand;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
@@ -17,12 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,9 @@ import java.util.stream.Collectors;
 public class SyncJobManager {
 
     private static final String SUCCESS_CODE = "00";
+    private static final int MAX_FETCH_BATCH_SIZE = 50;
+    private static final int DEFAULT_NUM_OF_ROWS = 5_000;
+    private static final int DEFAULT_PAGE_NUMBER = 1;
 
     private final DataGoKrApiService dataGoKrApiService;
 
@@ -41,26 +47,30 @@ public class SyncJobManager {
 
     private final IndexInfoReader indexInfoReader;
 
+    private final ExternalApiProperties externalApiProperties;
+
     public List<SyncJobDto> syncIndexInfos() {
-        DataGoKrApiResponse<StockMarketIndex> response = dataGoKrApiService.getStockMarketIndexList();
+        StockMarketIndexApiRequest request = StockMarketIndexApiRequest.ofPage(DEFAULT_NUM_OF_ROWS, DEFAULT_PAGE_NUMBER);
 
-        // 단건 : 기본 설정으로 총 데이터 : 10
-        List<StockMarketIndex> stockMarketIndexList = getList(response);
+        DataGoKrApiResponse<StockMarketIndex> firstResponse =
+                dataGoKrApiService.getStockMarketIndexList(request);
 
-        // 복수 : 총 지수정보 데이터: 228건
-        // 반복 호출 사용시 아래 로직을 사용예정.
-//        StockMarketIndexApiRequest request = StockMarketIndexApiRequest.ofPage(response.getPageNo(), response.getNumOfRows());
-//        List<StockMarketIndex> stockMarketIndexList = fetchStockMarketIndexes(response, request);
-        if (stockMarketIndexList.isEmpty()) {
-            log.warn("동기화할 주가지수 데이터가 없습니다.");
+        List<StockMarketIndex> items =
+                fetchPagesAsync(firstResponse, request);
+
+        if (items.isEmpty()) {
+            log.warn("동기화할 주가지수 정보가 없습니다.");
             return List.of();
         }
 
-        Map<IndexInfoKey, StockMarketIndex> latestStockMarketIndices = getLatestStockMarketIndices(stockMarketIndexList);
+        Map<IndexInfoKey, StockMarketIndex> latestIndexMap =
+                getLatestStockMarketIndices(items);
 
-        List<IndexInfoCreateCommand> infoCreateCommands = latestStockMarketIndices.values().stream()
-                .map(StockMarketIndex::toIndexInfoCommand)
-                .toList();
+        List<IndexInfoCreateCommand> infoCreateCommands =
+                latestIndexMap.values()
+                        .stream()
+                        .map(StockMarketIndex::toIndexInfoCommand)
+                        .toList();
 
         String worker = ipAddressService.getClientIp();
 
@@ -79,24 +89,28 @@ public class SyncJobManager {
             return List.of();
         }
 
-        Map<IndexInfoKey, IndexInfo> infoKeyIndexInfoMap = indexInfos.stream()
-                .collect(Collectors.toMap(this::createIndexInfoKey, Function.identity()));
+        List<StockIndexFetchTarget> fetchTargets = createFetchTargets(indexInfos, baseDateFrom, baseDateTo);
 
-        List<StockMarketIndexApiRequest> apiRequests = infoKeyIndexInfoMap.keySet().stream()
-                .map(key -> StockMarketIndexApiRequest.ofExactIndexName(baseDateFrom, baseDateTo, key.indexName()))
+        List<FetchOutcome> fetchOutcomes = fetchInBatches(fetchTargets);
+
+        List<IndexDataOpenApiCommand> openApiCommands = fetchOutcomes.stream()
+                .filter(fo -> {
+                    if (fo.isSuccess()) {
+                        return true;
+                    }
+                    log.error(
+                            "지수 데이터 외부 API 조회 실패. indexInfoId={}, key={}",
+                            fo.target().indexInfo().getId(),
+                            fo.target().key(),
+                            fo.error()
+                    );
+                    return false;
+                })
+                .map(fo -> createIndexDataCommands(fo.target(), fo.items()))
+                .flatMap(Collection::stream)
                 .toList();
 
-        List<StockMarketIndex> filteredIndexes = apiRequests.stream()
-                .map(request -> fetchStockMarketIndexes(dataGoKrApiService.getStockMarketIndexList(request), request))
-                .flatMap(List::stream)
-                .filter(smi -> infoKeyIndexInfoMap.get(IndexInfoKey.from(smi)) != null)
-                .toList();
-
-        List<IndexDataOpenApiCommand> dataOpenApiCommands = filteredIndexes.stream()
-                .map(smi -> smi.toIndexDataCommand(infoKeyIndexInfoMap.get(IndexInfoKey.from(smi))))
-                .toList();
-
-        return syncJobService.indexDataSaveAll(dataOpenApiCommands, worker);
+        return syncJobService.indexDataSaveAll(openApiCommands, worker);
 
     }
 
@@ -104,12 +118,144 @@ public class SyncJobManager {
         return syncIndexDataList(command, ipAddressService.getClientIp());
     }
 
-    private <T> List<T> getList(DataGoKrApiResponse<T> response) {
-        if (isResponseError(response)) {
-            return List.of();
+    private List<StockMarketIndex> fetchPagesAsync(DataGoKrApiResponse<StockMarketIndex> firstResponse, StockMarketIndexApiRequest request) {
+        validateFirstResponse(firstResponse);
+
+        Integer totalPages = firstResponse.getTotalPages();
+        Integer pageNo = firstResponse.getPageNo();
+        Integer numOfRows = firstResponse.getNumOfRows();
+
+        validatePageInformation(
+                totalPages,
+                pageNo,
+                numOfRows
+        );
+
+        int fetchBatchSize = resolveFetchBatchSize();
+
+        List<StockMarketIndex> result =
+                new ArrayList<>(firstResponse.getItem());
+
+        for (int fromPage = pageNo + 1; fromPage < totalPages; fromPage += fetchBatchSize) {
+
+            int toPage = Math.min(
+                    fromPage + fetchBatchSize - 1,
+                    totalPages
+            );
+
+            List<CompletableFuture<PageFetchOutcome>> futures =
+                    IntStream.rangeClosed(fromPage, toPage)
+                            .mapToObj(currentPage -> {
+                                StockMarketIndexApiRequest pageRequest =
+                                        request.withPageNo(currentPage)
+                                                .withNumOfRows(numOfRows);
+
+                                return fetchPageAsync(
+                                        currentPage,
+                                        pageRequest
+                                );
+                            })
+                            .toList();
+
+            CompletableFuture.allOf(
+                    futures.toArray(CompletableFuture[]::new)
+            ).join();
+
+            futures.stream()
+                    .map(CompletableFuture::join)
+                    .filter(outcome -> {
+                        if (!outcome.isSuccess()) {
+                            log.error(
+                                    "지수 정보 페이지 조회 실패. page={}",
+                                    outcome.pageNo(),
+                                    outcome.error()
+                            );
+                        }
+                        return outcome.isSuccess();
+                    })
+                    .flatMap(outcome -> outcome.items.stream())
+                    .forEach(result::add);
+
         }
+
+        return List.copyOf(result);
+    }
+
+    private CompletableFuture<PageFetchOutcome> fetchPageAsync(int pageNo, StockMarketIndexApiRequest request) {
+        try {
+            return CompletableFuture
+                    .supplyAsync(
+                            () -> fetchPage(pageNo, request),
+                            externalApiExecutor
+                    )
+                    .handle((items, throwable) -> {
+                        if (throwable == null) {
+                            return PageFetchOutcome.success(
+                                    pageNo,
+                                    items
+                            );
+                        }
+
+                        return PageFetchOutcome.failure(
+                                pageNo,
+                                unwrap(throwable)
+                        );
+                    });
+
+        } catch (RejectedExecutionException exception) {
+            return CompletableFuture.completedFuture(
+                    PageFetchOutcome.failure(
+                            pageNo,
+                            exception
+                    )
+            );
+        }
+    }
+
+    private List<StockMarketIndex> fetchPage(
+            int pageNo,
+            StockMarketIndexApiRequest request
+    ) {
+        DataGoKrApiResponse<StockMarketIndex> response =
+                dataGoKrApiService.getStockMarketIndexList(request);
+
+        if (isResponseError(response)) {
+            throw new IllegalStateException(
+                    "지수 정보 페이지 조회 실패. page=" + pageNo
+            );
+        }
+
         return response.getItem();
     }
+
+    private void validateFirstResponse(
+            DataGoKrApiResponse<StockMarketIndex> response
+    ) {
+        if (isResponseError(response)) {
+            throw new IllegalStateException(
+                    "주가지수 첫 페이지 조회에 실패했습니다."
+            );
+        }
+    }
+
+    private void validatePageInformation(
+            Integer totalPages,
+            Integer pageNo,
+            Integer numOfRows
+    ) {
+        if (totalPages == null
+                || pageNo == null
+                || numOfRows == null
+                || numOfRows <= 0) {
+            throw new IllegalStateException(
+                    "주가지수 API 페이지 정보가 올바르지 않습니다. "
+                            + "pageNo=" + pageNo
+                            + ", numOfRows=" + numOfRows
+                            + ", totalPages=" + totalPages
+            );
+        }
+    }
+
 
     private <T> boolean isResponseError(DataGoKrApiResponse<T> response) {
         boolean hasError = !SUCCESS_CODE.equals(response.getResultCode());
@@ -147,23 +293,19 @@ public class SyncJobManager {
     private List<StockMarketIndex> fetchStockMarketIndexes(
             DataGoKrApiResponse<StockMarketIndex> firstResponse,
             StockMarketIndexApiRequest originRequest) {
+        validateFirstResponse(firstResponse);
+
         Integer totalPages = firstResponse.getTotalPages();
         Integer pageNo = firstResponse.getPageNo();
         Integer numOfRows = firstResponse.getNumOfRows();
-        if (totalPages == null || pageNo == null || numOfRows == null) {
-            log.error(
-                    "주가지수 API 페이지 정보가 올바르지 않습니다. " +
-                            "pageNo={}, numOfRows={}, totalPages={}",
-                    pageNo,
-                    numOfRows,
-                    totalPages
-            );
-            return List.of();
-        }
+
+        validatePageInformation(
+                totalPages,
+                pageNo,
+                numOfRows
+        );
 
         List<StockMarketIndex> lists = new ArrayList<>(firstResponse.getItem());
-        // 25만건 전부 호출시 1분 소요..
-        // 비동기 멀티쓰레드 사용 고려 예정
         for (int currentPage = pageNo + 1; currentPage <= totalPages; currentPage++) {
 
             StockMarketIndexApiRequest pageRequest = originRequest
@@ -173,14 +315,10 @@ public class SyncJobManager {
             DataGoKrApiResponse<StockMarketIndex> pageResponse = dataGoKrApiService.getStockMarketIndexList(pageRequest);
 
             if (isResponseError(pageResponse)) {
-                log.error(
-                        "주가지수 페이지 조회에 실패했습니다. page={}, response={}",
-                        currentPage,
-                        pageResponse
+                throw new IllegalStateException(
+                        "주가지수 페이지 조회에 실패했습니다. page="
+                                + currentPage
                 );
-
-                // 일부 페이지만 저장되는 것을 방지하기 위해 전체 동기화를 중단
-                return List.of();
             }
             lists.addAll(pageResponse.getItem());
         }
@@ -190,5 +328,255 @@ public class SyncJobManager {
     private IndexInfoKey createIndexInfoKey(IndexInfo info) {
         return new IndexInfoKey(info.getIndexClassification(), info.getIndexName());
     }
+
+    /**
+     * IndexInfo를 외부 API 호출 대상으로 변환합니다.
+     * <p>
+     * 요청 객체와 IndexInfoKey, IndexInfo를 하나의 record로 유지하므로
+     * 비동기 결과가 어떤 지수에 대한 것인지 추적할 수 있습니다.
+     */
+    private List<StockIndexFetchTarget> createFetchTargets(
+            List<IndexInfo> indexInfos,
+            LocalDate baseDateFrom,
+            LocalDate baseDateTo
+    ) {
+        return indexInfos.stream()
+                .map(indexInfo -> {
+                    IndexInfoKey key =
+                            createIndexInfoKey(indexInfo);
+
+                    StockMarketIndexApiRequest request =
+                            StockMarketIndexApiRequest
+                                    .ofExactIndexName(
+                                            baseDateFrom,
+                                            baseDateTo,
+                                            key.indexName()
+                                    );
+
+                    return new StockIndexFetchTarget(
+                            indexInfo,
+                            key,
+                            request
+                    );
+                })
+                .toList();
+    }
+
+    /**
+     * 전체 대상을 최대 50건씩 나누어 실행합니다.
+     */
+    private List<FetchOutcome> fetchInBatches(List<StockIndexFetchTarget> targets) {
+        int fetchBatchSize = resolveFetchBatchSize();
+
+        List<FetchOutcome> results = new ArrayList<>();
+
+        for (int fromIndex = 0; fromIndex < targets.size(); fromIndex += fetchBatchSize) {
+
+            int toIndex = Math.min(fromIndex + fetchBatchSize, targets.size());
+
+            List<StockIndexFetchTarget> batch = targets.subList(fromIndex, toIndex);
+
+            results.addAll(fetchBatch(batch));
+        }
+
+        return List.copyOf(results);
+    }
+
+    private int resolveFetchBatchSize() {
+        int configuredSize = externalApiProperties.fetchBatchSize();
+        if (configuredSize <= 0) {
+            return MAX_FETCH_BATCH_SIZE;
+        }
+
+        return Math.min(configuredSize, MAX_FETCH_BATCH_SIZE);
+    }
+
+    private List<FetchOutcome> fetchBatch(List<StockIndexFetchTarget> batch) {
+        List<CompletableFuture<FetchOutcome>> futures = batch.stream()
+                .map(this::fetchAsync)
+                .toList();
+
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                .join();
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
+
+    }
+
+    /**
+     * 단일 지수의 전체 페이지를 비동기로 조회합니다.
+     */
+    private CompletableFuture<FetchOutcome> fetchAsync(StockIndexFetchTarget target) {
+        try {
+            return CompletableFuture.
+                    supplyAsync(
+                            () -> fetchTarget(target.request()),
+                            externalApiExecutor
+                    )
+                    .handle((items, throwable) -> {
+                        if (throwable == null) {
+                            return FetchOutcome.success(
+                                    target,
+                                    items
+                            );
+                        }
+
+                        Throwable cause =
+                                unwrap(throwable);
+
+                        return FetchOutcome.failure(
+                                target,
+                                cause
+                        );
+                    });
+        } catch (RejectedExecutionException e) {
+            /*
+             * Executor의 스레드와 큐가 모두 가득 차서
+             * 작업 제출 자체가 거절된 경우입니다.
+             */
+            return CompletableFuture.completedFuture(
+                    FetchOutcome.failure(
+                            target,
+                            e
+                    )
+            );
+        }
+    }
+
+    private List<StockMarketIndex> fetchTarget(StockMarketIndexApiRequest request) {
+        DataGoKrApiResponse<StockMarketIndex> firstResponse = dataGoKrApiService.getStockMarketIndexList(request);
+
+        return fetchStockMarketIndexes(
+                firstResponse,
+                request
+        );
+    }
+
+    private Throwable unwrap(
+            Throwable throwable
+    ) {
+        Throwable current = throwable;
+
+        while (current instanceof CompletionException
+                && current.getCause() != null) {
+            current = current.getCause();
+        }
+
+        return current;
+    }
+
+    /**
+     * API 결과를 해당 IndexInfo의 저장 Command로 변환합니다.
+     */
+    private List<IndexDataOpenApiCommand> createIndexDataCommands(
+            StockIndexFetchTarget target,
+            List<StockMarketIndex> items
+    ) {
+        return items.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> isSameIndexInfoKey(target.key, item))
+                .map(item -> item.toIndexDataCommand(target.indexInfo))
+                .toList();
+    }
+
+    private boolean isSameIndexInfoKey(IndexInfoKey key, StockMarketIndex item) {
+
+        return Objects.equals(key.indexClassification(), item.idxCsf())
+                && Objects.equals(key.indexName(), item.idxNm());
+    }
+
+
+    /**
+     * 하나의 외부 API 호출 대상입니다.
+     */
+    private record StockIndexFetchTarget(
+            IndexInfo indexInfo,
+            IndexInfoKey key,
+            StockMarketIndexApiRequest request
+    ) {
+    }
+
+    /**
+     * 외부 API 조회의 성공 또는 실패 결과입니다.
+     */
+    private record FetchOutcome(
+            StockIndexFetchTarget target,
+            List<StockMarketIndex> items,
+            Throwable error
+    ) {
+
+        private FetchOutcome {
+            items = items == null
+                    ? List.of()
+                    : List.copyOf(items);
+        }
+
+        static FetchOutcome success(
+                StockIndexFetchTarget target,
+                List<StockMarketIndex> items
+        ) {
+            return new FetchOutcome(
+                    target,
+                    items,
+                    null
+            );
+        }
+
+        static FetchOutcome failure(
+                StockIndexFetchTarget target,
+                Throwable error
+        ) {
+            return new FetchOutcome(
+                    target,
+                    List.of(),
+                    error
+            );
+        }
+
+        boolean isSuccess() {
+            return error == null;
+        }
+    }
+
+    private record PageFetchOutcome(
+            int pageNo,
+            List<StockMarketIndex> items,
+            Throwable error
+    ) {
+        private PageFetchOutcome {
+            items = items == null
+                    ? List.of()
+                    : List.copyOf(items);
+        }
+
+        static PageFetchOutcome success(
+                int pageNo,
+                List<StockMarketIndex> items
+        ) {
+            return new PageFetchOutcome(
+                    pageNo,
+                    items,
+                    null
+            );
+        }
+
+        static PageFetchOutcome failure(
+                int pageNo,
+                Throwable error
+        ) {
+            return new PageFetchOutcome(
+                    pageNo,
+                    List.of(),
+                    error
+            );
+        }
+
+        boolean isSuccess() {
+            return error == null;
+        }
+    }
+
 
 }
