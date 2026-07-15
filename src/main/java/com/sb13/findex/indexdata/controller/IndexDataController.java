@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/index-data")
 @Validated
-public class IndexDataController {
+public class IndexDataController implements IndexDataApi {
 
     private final IndexDataService indexDataService;
     private final DashboardIndexDataService dashboardIndexDataService;
@@ -47,6 +47,7 @@ public class IndexDataController {
         this.dashboardIndexDataService = dashboardIndexDataService;
     }
 
+  @Override
   @PostMapping
   public ResponseEntity<IndexDataResponse> createIndexData(
       @Valid @RequestBody IndexDataCreateRequest request) {
@@ -57,6 +58,7 @@ public class IndexDataController {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
+  @Override
   @PatchMapping("/{id}")
   public ResponseEntity<IndexDataResponse> updateIndexData(
       @PathVariable Long id,
@@ -67,12 +69,14 @@ public class IndexDataController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteIndexData(@PathVariable Long id) {
     indexDataService.deleteIndexData(id);
     return ResponseEntity.noContent().build();
   }
 
+    @Override
     @GetMapping
     public CursorPageResponse<IndexDataResponse> search(
             @RequestParam(required = false) Long indexInfoId,
@@ -105,7 +109,8 @@ public class IndexDataController {
         return indexDataService.search(condition);
     }
 
-    @GetMapping(value = "/export", produces = "text/csv")
+    @Override
+    @GetMapping(value = "/export/csv", produces = "text/csv")
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) Long indexInfoId,
 
@@ -138,6 +143,7 @@ public class IndexDataController {
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(csv);
     }
+    @Override
     @GetMapping("/performance/favorite")
     public List<IndexPerformanceResponse> getFavoritePerformance(
             @RequestParam(defaultValue = "DAILY") UnitPeriodType periodType
@@ -145,6 +151,7 @@ public class IndexDataController {
         return dashboardIndexDataService.getFavoritePerformance(periodType);
     }
     //지수차트
+    @Override
     @GetMapping("/{id}/chart")
     public IndexChartResponse getIndexChart(
             @PathVariable Long id,
@@ -152,6 +159,7 @@ public class IndexDataController {
     ) {
         return dashboardIndexDataService.getIndexChart(id, periodType);
     }
+    @Override
     @GetMapping("/performance/rank")
     public List<RankedIndexPerformanceResponse> getPerformanceRank(
             @RequestParam(required = false) Long indexInfoId,

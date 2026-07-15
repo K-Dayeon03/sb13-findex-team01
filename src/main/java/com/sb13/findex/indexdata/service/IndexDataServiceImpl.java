@@ -1,5 +1,7 @@
 package com.sb13.findex.indexdata.service;
 
+import com.sb13.findex.global.exception.DuplicateIndexDataException;
+import com.sb13.findex.global.exception.IndexDataNotFoundException;
 import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
 import com.sb13.findex.indexdata.dto.command.IndexDataUpdateCommand;
 import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
@@ -11,6 +13,7 @@ import com.sb13.findex.indexdata.entity.IndexData;
 import com.sb13.findex.indexdata.mapper.IndexDataMapper;
 import com.sb13.findex.indexdata.repository.IndexDataRepository;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
+import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
 import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
 
 import java.util.List;
@@ -38,7 +41,7 @@ public class IndexDataServiceImpl implements IndexDataService {
     @Transactional
     public IndexDataResponse createIndexData(IndexDataCreateCommand command) {
         IndexInfo indexInfo = indexInfoRepository.findById(command.indexInfoId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 정보입니다. ID: " + command.indexInfoId()));
+            .orElseThrow(() -> new IndexInfoNotFoundException(command.indexInfoId()));
 
         // 기존 데이터가 있으면 생성 요청은 실패 처리
 
@@ -46,7 +49,7 @@ public class IndexDataServiceImpl implements IndexDataService {
                 command.indexInfoId(),
                 command.baseDate()
         )) {
-            throw new IllegalArgumentException("해당 날짜의 지수 데이터가 이미 존재합니다.");
+            throw new DuplicateIndexDataException();
         }
 
         IndexData indexData = IndexData.createUserData(indexInfo, command);
@@ -59,7 +62,7 @@ public class IndexDataServiceImpl implements IndexDataService {
     @Transactional
     public IndexDataResponse updateIndexData(Long id, IndexDataUpdateCommand command) {
         IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 데이터입니다. ID: " + id));
+            .orElseThrow(() -> new IndexDataNotFoundException(id));
 
         indexData.updateByUser(
             command.marketPrice(),
@@ -80,7 +83,7 @@ public class IndexDataServiceImpl implements IndexDataService {
     @Transactional
     public void deleteIndexData(Long id) {
         IndexData indexData = indexDataRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지수 데이터입니다. ID: " + id));
+            .orElseThrow(() -> new IndexDataNotFoundException(id));
 
         indexDataRepository.delete(indexData);
     }
