@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, Long> {
+public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, Long>, AutoSyncConfigRepositoryCustom {
     // 배치 스케줄러가 자동 연동 대상(활성화된 설정)만 조회할 때 사용
     List<AutoSyncConfig> findByEnabled(boolean enabled);
 
@@ -19,4 +19,7 @@ public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, 
 
     // 중복 등록 방지
     boolean existsByIndexInfo(IndexInfo indexInfo);
+
+    // 지수 삭제 시 연결된 자동 연동 설정도 함께 삭제 (유하정님 요청 - IndexInfo 삭제 서비스에서 호출)
+    void deleteByIndexInfoId(Long indexInfoId);
 }
