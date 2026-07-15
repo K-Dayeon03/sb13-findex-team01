@@ -83,14 +83,29 @@ public class SyncJobRepositoryImpl implements SyncJobRepositoryCustom{
             params.put("indexInfoId", command.indexInfoId());
         }
 
-        if (command.targetDate() != null) {
-            jpql.append("AND s.targetDate = :targetDate ");
-            params.put("targetDate", command.targetDate());
+        if (command.baseDateFrom() != null) {
+            jpql.append("AND s.targetDate >= :baseDateFrom ");
+            params.put("baseDateFrom", command.baseDateFrom());
+        }
+
+        if (command.baseDateTo() != null) {
+            jpql.append("AND s.targetDate <= :baseDateTo ");
+            params.put("baseDateTo", command.baseDateTo());
         }
 
         if (command.worker() != null && !command.worker().isEmpty()) {
             jpql.append("AND s.worker = :worker ");
             params.put("worker", command.worker());
+        }
+
+        if (command.jobTimeFrom() != null) {
+            jpql.append("AND s.jobTime >= :jobTimeFrom ");
+            params.put("jobTimeFrom", command.jobTimeFrom());
+        }
+
+        if (command.jobTimeTo() != null) {
+            jpql.append("AND s.jobTime <= :jobTimeTo ");
+            params.put("jobTimeTo", command.jobTimeTo());
         }
 
         if (command.result() != null) {

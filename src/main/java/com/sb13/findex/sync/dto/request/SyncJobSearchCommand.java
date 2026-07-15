@@ -4,12 +4,16 @@ import com.sb13.findex.sync.entity.JobResult;
 import com.sb13.findex.sync.entity.JobType;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record SyncJobSearchCommand(
         JobType jobType,
         Long indexInfoId,
-        LocalDate targetDate,
+        LocalDate baseDateFrom,
+        LocalDate baseDateTo,
         String worker,
+        LocalDateTime jobTimeFrom,
+        LocalDateTime jobTimeTo,
         JobResult result,
         String sortField,
         String sortDirection,

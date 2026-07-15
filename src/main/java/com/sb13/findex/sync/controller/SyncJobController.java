@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -27,14 +28,17 @@ public class SyncJobController implements SyncJobApi{
 
     @Override
     @GetMapping
-    public CursorPageResponse<SyncJobDto> search(
+    public ResponseEntity<CursorPageResponse<SyncJobDto>> search(
             @RequestParam(required = false) String jobType,
             @RequestParam(required = false) Long indexInfoId,
-            @RequestParam(required = false) LocalDate targetDate,
+            @RequestParam(required = false) LocalDate baseDateFrom,
+            @RequestParam(required = false) LocalDate baseDateTo,
             @RequestParam(required = false) String worker,
-            @RequestParam(required = false) String result,
+            @RequestParam(required = false) LocalDateTime jobTimeFrom,
+            @RequestParam(required = false) LocalDateTime jobTimeTo,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortField,
-            @RequestParam(required = false, defaultValue = "asc") String sortDirection,
+            @RequestParam(required = false, defaultValue = "desc") String sortDirection,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Long idAfter,
             @RequestParam(required = false) Integer size
@@ -42,16 +46,20 @@ public class SyncJobController implements SyncJobApi{
         SyncJobSearchRequest request = new SyncJobSearchRequest(
                 jobType,
                 indexInfoId,
-                targetDate,
+                baseDateFrom,
+                baseDateTo,
                 worker,
-                result,
+                jobTimeFrom,
+                jobTimeTo,
+                status,
                 sortField,
                 sortDirection,
                 cursor,
                 idAfter,
                 size
         );
-        return syncJobService.search(request.toCommand());
+        CursorPageResponse<SyncJobDto> response = syncJobService.search(request.toCommand());
+        return ResponseEntity.ok(response);
     }
 
     @Override

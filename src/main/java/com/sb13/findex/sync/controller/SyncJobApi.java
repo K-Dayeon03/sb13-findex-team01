@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Tag(name = "연동 작업 관리", description = "연동 작업(SyncJob) 조회 및 실행 API")
@@ -24,12 +25,15 @@ public interface SyncJobApi {
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (유효하지 않은 필터 값 등)"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    CursorPageResponse<SyncJobDto> search(
+    ResponseEntity<CursorPageResponse<SyncJobDto>> search(
             @Parameter(description = "연동 작업 유형 (INDEX_INFO, INDEX_DATA)") String jobType,
             @Parameter(description = "지수 정보 ID") Long indexInfoId,
-            @Parameter(description = "대상 날짜") LocalDate targetDate,
+            @Parameter(description = "대상 날짜 (부터)") LocalDate baseDateFrom,
+            @Parameter(description = "대상 날짜 (까지)") LocalDate baseDateTo,
             @Parameter(description = "작업자 (요청 IP 또는 system)") String worker,
-            @Parameter(description = "결과 (SUCCESS, FAILED)") String result,
+            @Parameter(description = "작업 일시 (부터)") LocalDateTime jobTimeFrom,
+            @Parameter(description = "작업 일시 (까지)") LocalDateTime jobTimeTo,
+            @Parameter(description = "결과 (SUCCESS, FAILED)") String status,
             @Parameter(description = "정렬 필드 (targetDate, jobTime)") String sortField,
             @Parameter(description = "정렬 방향 (asc, desc)") String sortDirection,
             @Parameter(description = "커서 (이전 페이지 마지막 정렬 값)") String cursor,
