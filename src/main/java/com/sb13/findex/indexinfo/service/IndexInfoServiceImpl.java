@@ -12,6 +12,7 @@ import com.sb13.findex.sync.entity.*;
 import com.sb13.findex.sync.service.*;
 import com.sb13.findex.sync.service.AutoSyncConfigService;
 import lombok.*;
+import org.springframework.dao.*;
 import org.springframework.stereotype.*;
 import org.springframework.transaction.annotation.*;
 
@@ -24,6 +25,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
     private final IndexInfoRepository indexInfoRepository;
     private final AutoSyncConfigService autoSyncConfigService;
     private final IndexDataService indexDataService;
+    private final SyncJobReferenceService syncJobReferenceService;
 
     @Override
     public CursorPageResponse<IndexInfoResponse> search(IndexInfoSearchCondition condition) {
@@ -131,9 +133,9 @@ public class IndexInfoServiceImpl implements IndexInfoService {
         // TODO: 자동 연동 담당자 메서드 추가 후 연결
         // autoSyncConfigService.deleteByIndexInfoId(id);
 
-        // TODO:연동 작업 이력은 유지하고 지수정보 연관관계만 해제
+
         // SyncJob 이력은 유지하고 삭제 대상 IndexInfo와의 연관관계만 해제
-        // syncJobService.disconnectIndexInfo(id);
+        syncJobReferenceService.detachIndexInfo(id);
 
         // 지수정보 삭제
         indexInfoRepository.delete(indexInfo);
@@ -155,7 +157,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveOrUpdateOpenApiInfo(
             IndexInfoCreateCommand command
     ) {
@@ -172,14 +174,11 @@ public class IndexInfoServiceImpl implements IndexInfoService {
                         );
 
         if (existingIndexInfo.isPresent()) {
-            IndexInfo indexInfo = existingIndexInfo.get();
-
-            indexInfo.updateByOpenApi(
+            existingIndexInfo.get().updateByOpenApi(
                     command.employedItemsCount(),
                     command.basePointInTime(),
                     command.baseIndex()
             );
-
             return;
         }
 
@@ -194,7 +193,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
         );
 
         IndexInfo savedIndexInfo =
-                indexInfoRepository.save(indexInfo);
+                indexInfoRepository.saveAndFlush(indexInfo);
 
         autoSyncConfigService.create(
                 new AutoSyncConfigCommand(
@@ -203,5 +202,4 @@ public class IndexInfoServiceImpl implements IndexInfoService {
                 )
         );
     }
-
 }

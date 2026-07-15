@@ -108,6 +108,11 @@ public class IndexInfo extends BaseEntity {
             LocalDate basePointInTime,
             BigDecimal baseIndex
     ) {
+
+        if (this.sourceType != SourceType.OPEN_API) {
+            return;
+        }
+
         this.employedItemsCount = employedItemsCount;
         this.basePointInTime = basePointInTime;
         this.baseIndex = baseIndex;

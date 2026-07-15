@@ -36,6 +36,7 @@ public interface IndexInfoService {
     // 지수 정보 요약 목록 조회
     List<IndexInfoSummaryResponse> findSummaries();
 
+    // Open API 전용 저장/ 수정
     void saveOrUpdateOpenApiInfo(
             IndexInfoCreateCommand command
     );
