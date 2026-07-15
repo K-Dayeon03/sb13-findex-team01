@@ -23,8 +23,10 @@ public enum SyncJobSortField {
 
         // 공백 제거
         String trimmed = value.trim();
+
         for (SyncJobSortField field : values()) {
-            if (field.name().equalsIgnoreCase(trimmed)) {
+            if (field.name().equalsIgnoreCase(trimmed)
+                    || field.getQueryField().equalsIgnoreCase(trimmed)) {
                 return field;
             }
         }
