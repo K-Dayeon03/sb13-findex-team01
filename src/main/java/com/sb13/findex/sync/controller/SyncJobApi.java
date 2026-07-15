@@ -39,7 +39,8 @@ public interface SyncJobApi {
 
     @Operation(summary = "지수 정보 연동", description = "Open API를 통해 지수 정보를 연동합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "202", description = "연동 작업 생성 성공"),
+            @ApiResponse(responseCode = "200", description = "연동할 데이터 없음"),
+            @ApiResponse(responseCode = "201", description = "연동 작업 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
 
@@ -48,7 +49,8 @@ public interface SyncJobApi {
 
     @Operation(summary = "지수 데이터 연동", description = "Open API를 통해 지수 데이터를 연동합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "202", description = "연동 작업 생성 성공"),
+            @ApiResponse(responseCode = "200", description = "연동할 데이터 없음"),
+            @ApiResponse(responseCode = "201", description = "연동 작업 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청(유효하지 않는 날짜 범위 등)"),
             @ApiResponse(responseCode = "404", description = "지수 정보를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
