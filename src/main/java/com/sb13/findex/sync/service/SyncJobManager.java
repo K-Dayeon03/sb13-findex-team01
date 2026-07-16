@@ -81,7 +81,6 @@ public class SyncJobManager {
     public List<SyncJobDto> syncIndexDataList(IndexDataSyncCommand command, String worker) {
         List<Long> indexInfoIds = command.indexInfoIds();
         LocalDate baseDateFrom = command.baseDateFrom();
-        LocalDate baseDateTo = command.baseDateTo();
 
         List<IndexInfo> indexInfos = indexInfoReader.findIndexInfosByIds(indexInfoIds);
         if (indexInfos.isEmpty()) {
@@ -89,7 +88,7 @@ public class SyncJobManager {
             return List.of();
         }
 
-        List<StockIndexFetchTarget> fetchTargets = createFetchTargets(indexInfos, baseDateFrom, baseDateTo);
+        List<StockIndexFetchTarget> fetchTargets = createFetchTargets(indexInfos, baseDateFrom);
 
         List<FetchOutcome> fetchOutcomes = fetchInBatches(fetchTargets);
 
@@ -136,7 +135,7 @@ public class SyncJobManager {
         List<StockMarketIndex> result =
                 new ArrayList<>(firstResponse.getItem());
 
-        for (int fromPage = pageNo + 1; fromPage < totalPages; fromPage += fetchBatchSize) {
+        for (int fromPage = pageNo + 1; fromPage <= totalPages; fromPage += fetchBatchSize) {
 
             int toPage = Math.min(
                     fromPage + fetchBatchSize - 1,
@@ -337,8 +336,7 @@ public class SyncJobManager {
      */
     private List<StockIndexFetchTarget> createFetchTargets(
             List<IndexInfo> indexInfos,
-            LocalDate baseDateFrom,
-            LocalDate baseDateTo
+            LocalDate baseDateFrom
     ) {
         return indexInfos.stream()
                 .map(indexInfo -> {
@@ -347,9 +345,10 @@ public class SyncJobManager {
 
                     StockMarketIndexApiRequest request =
                             StockMarketIndexApiRequest
-                                    .ofExactIndexName(
+                                    .ofExactIndexNamePage(
+                                            DEFAULT_NUM_OF_ROWS,
+                                            DEFAULT_PAGE_NUMBER,
                                             baseDateFrom,
-                                            baseDateTo,
                                             key.indexName()
                                     );
 
@@ -370,7 +369,7 @@ public class SyncJobManager {
 
         List<FetchOutcome> results = new ArrayList<>();
 
-        for (int fromIndex = 0; fromIndex < targets.size(); fromIndex += fetchBatchSize) {
+        for (int fromIndex = 0; fromIndex <= targets.size(); fromIndex += fetchBatchSize) {
 
             int toIndex = Math.min(fromIndex + fetchBatchSize, targets.size());
 
@@ -447,7 +446,6 @@ public class SyncJobManager {
 
     private List<StockMarketIndex> fetchTarget(StockMarketIndexApiRequest request) {
         DataGoKrApiResponse<StockMarketIndex> firstResponse = dataGoKrApiService.getStockMarketIndexList(request);
-
         return fetchStockMarketIndexes(
                 firstResponse,
                 request

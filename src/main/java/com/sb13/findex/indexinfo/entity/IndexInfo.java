@@ -54,10 +54,10 @@ public class IndexInfo extends BaseEntity {
     @Column(name = "employed_items_count", nullable = false)
     private int employedItemsCount;
 
-    @Column(name = "base_point_in_time", nullable = false)
+    @Column(name = "base_point_in_time")
     private LocalDate basePointInTime;
 
-    @Column(name = "base_index", nullable = false)
+    @Column(name = "base_index")
     private BigDecimal baseIndex;
 
     @Column(name = "source_type", length = 30, nullable = false)
