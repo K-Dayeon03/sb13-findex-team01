@@ -3,6 +3,7 @@ package com.sb13.findex.sync.service;
 import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
 import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
+import com.sb13.findex.sync.dto.AutoSyncTarget;
 import com.sb13.findex.sync.dto.condition.AutoSyncConfigSearchCondition;
 import com.sb13.findex.sync.dto.condition.AutoSyncConfigSortField;
 import com.sb13.findex.sync.dto.response.AutoSyncConfigDto;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -100,5 +102,14 @@ public class AutoSyncConfigService {
     @Transactional
     public void deleteByIndexInfoId(Long indexInfoId) {
         autoSyncConfigRepository.deleteByIndexInfoId(indexInfoId);
+    }
+
+    public List<AutoSyncTarget> getEnabledSyncTargets() {
+        return autoSyncConfigRepository.findEnabledSyncTargets(true);
+    }
+
+    @Transactional
+    public void updateLastSyncedDate(List<Long> indexInfoIds, LocalDate date) {
+        autoSyncConfigRepository.updateLastSyncedDate(indexInfoIds, date);
     }
 }
