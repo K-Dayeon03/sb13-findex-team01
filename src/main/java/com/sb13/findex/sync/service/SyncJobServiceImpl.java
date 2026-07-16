@@ -104,8 +104,7 @@ public class SyncJobServiceImpl implements SyncJobService {
     @Override
     public List<SyncJobDto> indexInfoSaveAll(List<IndexInfoCreateCommand> infoCreateCommands, String worker) {
 
-        // TODO OPEN_API 저장로직 필요.
-        //  - indexInfoService.saveAll(infoCreateCommands)?
+        infoCreateCommands.forEach(indexInfoService::saveOrUpdateOpenApiInfo);
 
         List<IndexInfoKey> indexInfoKeys = infoCreateCommands.stream()
                 .map(this::getIndexInfoKey)
