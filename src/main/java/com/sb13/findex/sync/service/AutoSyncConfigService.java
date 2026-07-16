@@ -6,6 +6,7 @@ import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
 import com.sb13.findex.sync.dto.AutoSyncTarget;
 import com.sb13.findex.sync.dto.condition.AutoSyncConfigSearchCondition;
 import com.sb13.findex.sync.dto.condition.AutoSyncConfigSortField;
+import com.sb13.findex.sync.dto.projection.AutoSyncTargetProjection;
 import com.sb13.findex.sync.dto.response.AutoSyncConfigDto;
 import com.sb13.findex.sync.entity.AutoSyncConfig;
 import com.sb13.findex.sync.exception.AutoSyncConfigNotFoundException;
@@ -111,5 +112,10 @@ public class AutoSyncConfigService {
     @Transactional
     public void updateLastSyncedDate(List<Long> indexInfoIds, LocalDate date) {
         autoSyncConfigRepository.updateLastSyncedDate(indexInfoIds, date);
+    }
+
+    // 배치 스케줄러 전용 조회. 활성화된 지수와 각 지수의 마지막 저장 날짜를 함께 반환
+    public List<AutoSyncTargetProjection> getEnabledTargetsWithLatestBaseDate() {
+        return autoSyncConfigRepository.findEnabledTargetsWithLatestBaseDate();
     }
 }
