@@ -20,21 +20,16 @@ public class DataGoKrApiService {
     private final RestClient findexRestClient;
 
     public DataGoKrApiResponse<StockMarketIndex> getStockMarketIndexList() {
-
         return getStockMarketIndexList(null);
     }
 
     public DataGoKrApiResponse<StockMarketIndex> getStockMarketIndexList(StockMarketIndexApiRequest request) {
-        DataGoKrApiResponse<StockMarketIndex> stockMarketIndexResponse = call(
+       return call(
                 properties.stockMarketEndpoint(),
                 request,
                 new ParameterizedTypeReference<DataGoKrApiResponse<StockMarketIndex>>() {
                 }
         );
-
-        log.info("stockMarketIndexResponse : {}", stockMarketIndexResponse);
-
-        return stockMarketIndexResponse;
     }
 
     private <T> DataGoKrApiResponse<T> call(

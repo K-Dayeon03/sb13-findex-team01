@@ -1,6 +1,7 @@
 package com.sb13.findex.sync.repository;
 
 import com.sb13.findex.indexinfo.entity.IndexInfo;
+import com.sb13.findex.sync.dto.projection.AutoSyncTargetProjection;
 import com.sb13.findex.sync.entity.AutoSyncConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, Long>, AutoSyncConfigRepositoryCustom {
-    // 배치 스케줄러가 자동 연동 대상(활성화된 설정)만 조회할 때 사용
     List<AutoSyncConfig> findByEnabled(boolean enabled);
 
     // 연관된 IndexInfo를 join fetch로 함께 조회 -> 이후 DTO 변환 시 추가 쿼리(N+1) 방지
@@ -43,4 +43,11 @@ public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, 
             DO NOTHING
             """, nativeQuery = true)
     void upsertIfAbsent(@Param("indexInfoId") Long indexInfoId, @Param("enabled") boolean enabled);
+
+    @Query("select a.indexInfo.id as indexInfoId, max(d.baseDate) as latestBaseDate " +
+            "from AutoSyncConfig a " +
+            "left join IndexData d on d.indexInfo = a.indexInfo " +
+            "where a.enabled = true " +
+            "group by a.indexInfo.id")
+    List<AutoSyncTargetProjection> findEnabledTargetsWithLatestBaseDate();
 }

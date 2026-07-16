@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auto-sync-configs")
-public class AutoSyncConfigController {
+public class AutoSyncConfigController implements AutoSyncConfigApi {
 
     private final AutoSyncConfigService autoSyncConfigService;
 

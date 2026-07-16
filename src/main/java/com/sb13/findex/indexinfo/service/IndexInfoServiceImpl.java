@@ -1,23 +1,31 @@
 package com.sb13.findex.indexinfo.service;
 
-import com.sb13.findex.indexdata.service.*;
-import com.sb13.findex.indexinfo.dto.command.*;
-import com.sb13.findex.indexinfo.dto.response.*;
-import com.sb13.findex.indexinfo.entity.*;
-import com.sb13.findex.indexinfo.exception.*;
-import com.sb13.findex.indexinfo.mapper.*;
-import com.sb13.findex.indexinfo.repository.*;
-import com.sb13.findex.indexinfo.utli.*;
-import com.sb13.findex.sync.entity.*;
-import com.sb13.findex.sync.service.*;
+import com.sb13.findex.indexdata.service.IndexDataService;
+import com.sb13.findex.indexinfo.dto.command.IndexInfoCreateCommand;
+import com.sb13.findex.indexinfo.dto.command.IndexInfoSearchCondition;
+import com.sb13.findex.indexinfo.dto.command.IndexInfoUpdateCommand;
+import com.sb13.findex.indexinfo.dto.response.CursorPageResponse;
+import com.sb13.findex.indexinfo.dto.response.IndexInfoResponse;
+import com.sb13.findex.indexinfo.dto.response.IndexInfoSummaryResponse;
+import com.sb13.findex.indexinfo.entity.IndexInfo;
+import com.sb13.findex.indexinfo.exception.DuplicateIndexInfoException;
+import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
+import com.sb13.findex.indexinfo.mapper.IndexInfoMapper;
+import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
+import com.sb13.findex.indexinfo.repository.IndexInfoSortField;
+import com.sb13.findex.indexinfo.utli.IndexInfoPaginationUtils;
+import com.sb13.findex.sync.entity.SourceType;
+import com.sb13.findex.sync.service.AutoSyncConfigCommand;
 import com.sb13.findex.sync.service.AutoSyncConfigService;
-import lombok.*;
-import lombok.extern.slf4j.*;
-import org.springframework.dao.*;
-import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.*;
+import com.sb13.findex.sync.service.SyncJobReferenceService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -159,7 +167,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
     }
 
     @Override
-    @Transactional(propagation= Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveOrUpdateOpenApiInfo(
             IndexInfoCreateCommand command
     ) {
@@ -186,7 +194,7 @@ public class IndexInfoServiceImpl implements IndexInfoService {
             );
         }
 
-       IndexInfo indexInfo =
+        IndexInfo indexInfo =
                 indexInfoRepository
                         .findByIndexClassificationAndIndexName(
                                 indexClassification,
@@ -196,14 +204,12 @@ public class IndexInfoServiceImpl implements IndexInfoService {
                                 new IndexInfoNotFoundException(indexClassification, indexName)
                         );
 
-        // TODO AutoSyncConfig 담당 기능 병합 후 신규 지수정보의 기본 설정 생성 연동
-        /*autoSyncConfigService.createIfAbsent(
+        autoSyncConfigService.createIfAbsent(
                 new AutoSyncConfigCommand(
                         indexInfo,
                         false
                 )
         );
-        */
 
     }
 

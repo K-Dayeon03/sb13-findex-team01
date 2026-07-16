@@ -20,14 +20,16 @@ public class RestClientConfig {
 
         return builder
                 .baseUrl(properties.baseUrl())
-                .requestFactory(createClientHttpRequestFactory(initializeHttpRequestSettings()))
+                .requestFactory(createClientHttpRequestFactory(initializeHttpRequestSettings(properties)))
                 .build();
     }
 
-    private ClientHttpRequestFactorySettings initializeHttpRequestSettings() {
+    private ClientHttpRequestFactorySettings initializeHttpRequestSettings(FindexApiProperties properties) {
         return ClientHttpRequestFactorySettings.defaults()
-                .withConnectTimeout(Duration.ofSeconds(5))
-                .withReadTimeout(Duration.ofSeconds(10));
+                .withTimeouts(
+                        properties.connectTimeout(),
+                        properties.readTimeout()
+                );
     }
 
     private static ClientHttpRequestFactory createClientHttpRequestFactory(ClientHttpRequestFactorySettings settings) {

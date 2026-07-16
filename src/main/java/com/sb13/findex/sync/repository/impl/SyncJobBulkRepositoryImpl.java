@@ -106,7 +106,7 @@ public class SyncJobBulkRepositoryImpl implements SyncJobBulkRepository {
                     now(),
                     now()
                 FROM(
-                    VALUES (?, ?, ?, ?)
+                    VALUES (?, CAST(? AS DATE), ?, ?)
                 ) AS req(index_info_id, base_date, index_classification, index_name)
                 LEFT JOIN index_data data ON data.index_info_id = req.index_info_id
                 AND data.base_date = req.base_date

@@ -11,6 +11,28 @@ spring:
     locations: classpath:db/migration
 
 findex:
+  batch:
+    auto-sync:
+      cron: "0 0 1 * * *"
   api:
     base-url: https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService
     stock-market-endpoint: getStockMarketIndex
+    # 실제 HTTP 연결 제한 시간
+    connect-timeout: 3s
+    # 실제 HTTP 응답 읽기 제한 시간
+    read-timeout: 30s
+  external-api:
+    # 한 번에 Executor에 제출하는 최대 작업 수
+    # 1~50 사이만 허용
+    fetch-batch-size: 20
+
+    executor:
+      # 실제 동시 실행 수
+      core-pool-size: 10
+      max-pool-size: 10
+
+      # 실행 대기 가능한 작업 수
+      queue-capacity: 100
+
+      # 애플리케이션 종료 시 기존 작업 완료 대기 시간
+      await-termination-seconds: 30

@@ -1,8 +1,7 @@
 package com.sb13.findex.sync.entity;
 
-import com.sb13.findex.indexinfo.entity.IndexInfo;
-
 import com.sb13.findex.global.entity.BaseEntity;
+import com.sb13.findex.indexinfo.entity.IndexInfo;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,13 +11,13 @@ import lombok.*;
  */
 @Entity
 @Table(
-    name = "auto_sync_config",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_auto_sync_config_index_info_id",
-            columnNames = {"index_info_id"}
-        )
-    }
+        name = "auto_sync_config",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_auto_sync_config_index_info_id",
+                        columnNames = {"index_info_id"}
+                )
+        }
 )
 @Getter
 @NoArgsConstructor
@@ -37,5 +36,4 @@ public class AutoSyncConfig extends BaseEntity {
     @Setter
     @Column(nullable = false)
     private boolean enabled;
-
 }
