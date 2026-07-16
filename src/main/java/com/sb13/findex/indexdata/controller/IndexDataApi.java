@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public interface IndexDataApi {
       @ApiResponse(responseCode = "404", description = "참조하는 지수 정보를 찾을 수 없음"),
       @ApiResponse(responseCode = "500", description = "서버 오류")
   })
-  ResponseEntity<IndexDataResponse> createIndexData(IndexDataCreateRequest request);
+  ResponseEntity<IndexDataResponse> createIndexData(@Valid IndexDataCreateRequest request);
 
   @Operation(summary = "지수 데이터 수정", description = "기존 지수 데이터의 가격 및 거래량 정보를 수정합니다.")
   @ApiResponses({
@@ -37,7 +38,7 @@ public interface IndexDataApi {
       @ApiResponse(responseCode = "404", description = "수정할 지수 데이터를 찾을 수 없음"),
       @ApiResponse(responseCode = "500", description = "서버 오류")
   })
-  ResponseEntity<IndexDataResponse> updateIndexData(Long id, IndexDataUpdateRequest request);
+  ResponseEntity<IndexDataResponse> updateIndexData(Long id, @Valid IndexDataUpdateRequest request);
 
   @Operation(summary = "지수 데이터 물리 삭제", description = "해당 ID의 지수 데이터를 DB에서 완전히 삭제합니다.")
   @ApiResponses({

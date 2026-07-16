@@ -11,7 +11,6 @@ import com.sb13.findex.indexdata.service.IndexDataService;
 import com.sb13.findex.indexdata.entity.UnitPeriodType;
 import com.sb13.findex.indexdata.service.DashboardIndexDataService;
 import java.util.List;
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -50,7 +49,7 @@ public class IndexDataController implements IndexDataApi {
   @Override
   @PostMapping
   public ResponseEntity<IndexDataResponse> createIndexData(
-      @Valid @RequestBody IndexDataCreateRequest request) {
+      @RequestBody IndexDataCreateRequest request) {
     IndexDataCreateCommand command = IndexDataCreateCommand.from(request);
 
     IndexDataResponse response = indexDataService.createIndexData(command);
@@ -62,7 +61,7 @@ public class IndexDataController implements IndexDataApi {
   @PatchMapping("/{id}")
   public ResponseEntity<IndexDataResponse> updateIndexData(
       @PathVariable Long id,
-      @Valid @RequestBody IndexDataUpdateRequest request) {
+      @RequestBody IndexDataUpdateRequest request) {
 
     IndexDataUpdateCommand command = IndexDataUpdateCommand.from(request);
     IndexDataResponse response = indexDataService.updateIndexData(id, command);
