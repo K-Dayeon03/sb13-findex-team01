@@ -110,7 +110,7 @@ class IndexDataServiceImplTest {
     }
 
     @Test
-    void exportCsvStreamsRowsAndSanitizesSpreadsheetFormulaCells() {
+    void exportCsvStreamsRowsAndEscapesUnsafeSpreadsheetCells() {
         // given
         IndexDataSearchCondition condition = new IndexDataSearchCondition(
                 null,
@@ -122,7 +122,7 @@ class IndexDataServiceImplTest {
                 "baseDate",
                 "desc"
         );
-        IndexInfo indexInfo = indexInfo(1L, "=HYPERLINK", "@SUM");
+        IndexInfo indexInfo = indexInfo(1L, "=HYPERLINK", "@SUM\rKOSPI");
         IndexDataCsvRow indexData = indexDataCsvRow(indexInfo);
         StringWriter writer = new StringWriter();
 
@@ -135,7 +135,7 @@ class IndexDataServiceImplTest {
         // then
         assertThat(writer.toString())
                 .contains("ID,지수정보ID,지수분류명,지수명")
-                .contains(",'=HYPERLINK,'@SUM,");
+                .contains(",'=HYPERLINK,\"'@SUM\rKOSPI\",");
     }
 
     private IndexInfo indexInfo(Long id) {

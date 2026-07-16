@@ -261,7 +261,8 @@ public class IndexDataServiceImpl implements IndexDataService {
 
         String escaped = value.replace("\"", "\"\"");
 
-        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+        if (escaped.contains(",") || escaped.contains("\"")
+                || escaped.contains("\r") || escaped.contains("\n")) {
             return "\"" + escaped + "\"";
         }
 
