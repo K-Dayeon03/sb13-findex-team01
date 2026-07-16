@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class SyncJobSortFieldTest {
 
     @Test
@@ -16,17 +17,19 @@ class SyncJobSortFieldTest {
     }
 
     @Test
-    @DisplayName("enum 이름은 대소문자와 앞뒤 공백을 무시하고 변환한다")
-    void fromAcceptsEnumNameIgnoringCaseAndWhitespace() {
-        assertThat(SyncJobSortField.from("TARGET_DATE")).isEqualTo(SyncJobSortField.TARGET_DATE);
-        assertThat(SyncJobSortField.from(" job_time ")).isEqualTo(SyncJobSortField.JOB_TIME);
-    }
-
-    @Test
     @DisplayName("queryField 값도 sortField로 변환한다")
     void fromAcceptsQueryFieldValue() {
-        assertThat(SyncJobSortField.from("targetDate")).isEqualTo(SyncJobSortField.TARGET_DATE);
         assertThat(SyncJobSortField.from("jobTime")).isEqualTo(SyncJobSortField.JOB_TIME);
+        assertThat(SyncJobSortField.from("targetDate")).isEqualTo(SyncJobSortField.TARGET_DATE);
+    }
+
+
+    @Test
+    @DisplayName("sortField는 대소문자와 앞뒤 공백을 무시한다")
+    void fromIgnoresCaseAndWhitespace() {
+        assertThat(SyncJobSortField.from(" jobTime ")).isEqualTo(SyncJobSortField.JOB_TIME);
+        assertThat(SyncJobSortField.from(" targetDate ")).isEqualTo(SyncJobSortField.TARGET_DATE);
+        assertThat(SyncJobSortField.from(" job_time ")).isEqualTo(SyncJobSortField.JOB_TIME);
     }
 
     @Test
