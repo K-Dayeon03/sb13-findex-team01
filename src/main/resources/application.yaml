@@ -26,15 +26,15 @@ findex:
   external-api:
     # 한 번에 Executor에 제출하는 최대 작업 수
     # 1~50 사이만 허용
-    fetch-batch-size: 5
+    fetch-batch-size: 20
 
     executor:
       # 실제 동시 실행 수
-      core-pool-size: 2
-      max-pool-size: 2
+      core-pool-size: 10
+      max-pool-size: 10
 
       # 실행 대기 가능한 작업 수
-      queue-capacity: 20
+      queue-capacity: 100
 
       # 애플리케이션 종료 시 기존 작업 완료 대기 시간
       await-termination-seconds: 30
