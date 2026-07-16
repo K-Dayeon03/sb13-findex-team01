@@ -6,6 +6,8 @@ import com.sb13.findex.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 /*
  지수별 자동 연동(Open API 배치 연동) 활성화 여부를 관리
  지수 정보가 등록될 때 비활성화 상태로 생성
@@ -37,5 +39,9 @@ public class AutoSyncConfig extends BaseEntity {
     @Setter
     @Column(nullable = false)
     private boolean enabled;
+
+    @Setter
+    @Column(name = "last_synced_date")
+    private LocalDate lastSyncedDate;
 
 }

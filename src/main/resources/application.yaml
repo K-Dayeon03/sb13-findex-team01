@@ -11,6 +11,9 @@ spring:
     locations: classpath:db/migration
 
 findex:
+  batch:
+    auto-sync:
+      cron: "0 0 1 * * *"
   api:
     base-url: https://apis.data.go.kr/1160100/service/GetMarketIndexInfoService
     stock-market-endpoint: getStockMarketIndex
