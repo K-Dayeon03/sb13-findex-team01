@@ -1,5 +1,6 @@
 package com.sb13.findex.sync.dto.request;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import com.sb13.findex.sync.entity.JobResult;
 import com.sb13.findex.sync.entity.JobType;
 
@@ -29,7 +30,7 @@ public record SyncJobSearchRequest(
         try{
             return JobType.valueOf(jobType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 jobType 값입니다:" + jobType, e);
+            throw new InvalidRequestException("유효하지 않은 jobType 값입니다:" + jobType, e);
         }
     }
 
@@ -40,7 +41,7 @@ public record SyncJobSearchRequest(
         try {
             return JobResult.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 status 값입니다: " + status, e);
+            throw new InvalidRequestException("유효하지 않은 status 값입니다: " + status, e);
         }
     }
 

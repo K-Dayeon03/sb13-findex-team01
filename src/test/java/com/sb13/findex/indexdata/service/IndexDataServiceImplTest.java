@@ -6,15 +6,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
+import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
+import com.sb13.findex.indexdata.dto.response.IndexDataCsvRow;
 import com.sb13.findex.indexdata.entity.IndexData;
 import com.sb13.findex.indexdata.entity.IndexType;
 import com.sb13.findex.indexdata.repository.IndexDataRepository;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
 import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
 import com.sb13.findex.sync.entity.SourceType;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -93,14 +97,55 @@ class IndexDataServiceImplTest {
         indexDataService.saveOrUpdateOpenApiData(command);
 
         // then
+        assertThat(existingData.getMarketPrice()).isEqualByComparingTo("2745.58");
         assertThat(existingData.getClosingPrice()).isEqualByComparingTo("2770.69");
+        assertThat(existingData.getHighPrice()).isEqualByComparingTo("2770.70");
+        assertThat(existingData.getLowPrice()).isEqualByComparingTo("2733.63");
+        assertThat(existingData.getVersus()).isEqualByComparingTo("32.5");
+        assertThat(existingData.getFluctuationRate()).isEqualByComparingTo("1.19");
+        assertThat(existingData.getTradingQuantity()).isEqualTo(557090057L);
+        assertThat(existingData.getTradingPrice()).isEqualTo(12197991898146L);
+        assertThat(existingData.getMarketTotalAmount()).isEqualTo(2262832341048634L);
         verify(indexDataRepository, never()).save(org.mockito.ArgumentMatchers.any(IndexData.class));
     }
 
+    @Test
+    void exportCsvStreamsRowsAndSanitizesSpreadsheetFormulaCells() {
+        // given
+        IndexDataSearchCondition condition = new IndexDataSearchCondition(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "baseDate",
+                "desc"
+        );
+        IndexInfo indexInfo = indexInfo(1L, "=HYPERLINK", "@SUM");
+        IndexDataCsvRow indexData = indexDataCsvRow(indexInfo);
+        StringWriter writer = new StringWriter();
+
+        given(indexDataRepository.streamForExport(condition))
+                .willReturn(Stream.of(indexData));
+
+        // when
+        indexDataService.exportCsv(condition, writer);
+
+        // then
+        assertThat(writer.toString())
+                .contains("ID,지수정보ID,지수분류명,지수명")
+                .contains(",'=HYPERLINK,'@SUM,");
+    }
+
     private IndexInfo indexInfo(Long id) {
+        return indexInfo(id, "KOSPI", "코스피");
+    }
+
+    private IndexInfo indexInfo(Long id, String indexClassification, String indexName) {
         IndexInfo indexInfo = IndexInfo.create(
-                "KOSPI",
-                "코스피",
+                indexClassification,
+                indexName,
                 100,
                 LocalDate.of(1980, 1, 4),
                 BigDecimal.valueOf(100),
@@ -109,6 +154,26 @@ class IndexDataServiceImplTest {
         );
         ReflectionTestUtils.setField(indexInfo, "id", id);
         return indexInfo;
+    }
+
+    private IndexDataCsvRow indexDataCsvRow(IndexInfo indexInfo) {
+        return new IndexDataCsvRow(
+                1L,
+                indexInfo.getId(),
+                indexInfo.getIndexClassification(),
+                indexInfo.getIndexName(),
+                LocalDate.of(2024, 7, 31),
+                IndexType.OPEN_API,
+                BigDecimal.valueOf(2745.58),
+                BigDecimal.valueOf(2770.69),
+                BigDecimal.valueOf(2770.70),
+                BigDecimal.valueOf(2733.63),
+                BigDecimal.valueOf(32.5),
+                BigDecimal.valueOf(1.19),
+                557090057L,
+                12197991898146L,
+                2262832341048634L
+        );
     }
 
     private IndexDataOpenApiCommand openApiCommand(IndexInfo indexInfo, LocalDate baseDate, String closingPrice) {

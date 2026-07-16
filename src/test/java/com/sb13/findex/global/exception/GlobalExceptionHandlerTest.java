@@ -17,14 +17,14 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler exceptionHandler = new GlobalExceptionHandler();
 
     @Test
-    void handleIllegalArgumentExceptionReturnsBadRequest() {
+    void handleInvalidRequestExceptionReturnsBadRequest() {
         // given
-        IllegalArgumentException exception =
-                new IllegalArgumentException("지원하지 않는 정렬 필드입니다: source");
+        InvalidRequestException exception =
+                new InvalidRequestException("지원하지 않는 정렬 필드입니다: source");
 
         // when
         ResponseEntity<ErrorResponse> response =
-                exceptionHandler.handleIllegalArgumentException(exception);
+                exceptionHandler.handleInvalidRequestException(exception);
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);

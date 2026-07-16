@@ -1,5 +1,6 @@
 package com.sb13.findex.indexdata.dto.condition;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import java.util.Arrays;
 //정렬 가능 필드만 허용
 //스웨거 지수데이터목록 조회 response부분
@@ -44,6 +45,6 @@ public enum IndexDataSortField {
                 )
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException("지원하지 않는 정렬 필드입니다: " + value));
+                        new InvalidRequestException("지원하지 않는 정렬 필드입니다: " + value));
     }
 }

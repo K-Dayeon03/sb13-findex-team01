@@ -1,5 +1,6 @@
 package com.sb13.findex.indexinfo.repository;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import java.util.Arrays;
 
 public enum IndexInfoSortField {
@@ -29,7 +30,7 @@ public enum IndexInfoSortField {
                 )
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new InvalidRequestException(
                                 "지원하지 않는 정렬 필드입니다: " + value
                         )
                 );

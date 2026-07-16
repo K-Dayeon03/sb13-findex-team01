@@ -3,6 +3,7 @@ package com.sb13.findex.indexdata.dto.condition;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import org.junit.jupiter.api.Test;
 
 class IndexDataSortFieldTest {
@@ -24,9 +25,9 @@ class IndexDataSortFieldTest {
     }
 
     @Test
-    void fromThrowsIllegalArgumentExceptionForUnsupportedSortField() {
+    void fromThrowsInvalidRequestExceptionForUnsupportedSortField() {
         assertThatThrownBy(() -> IndexDataSortField.from("createdAt"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("지원하지 않는 정렬 필드입니다");
     }
 }

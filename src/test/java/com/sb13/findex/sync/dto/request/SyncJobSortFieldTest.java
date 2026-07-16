@@ -1,5 +1,6 @@
 package com.sb13.findex.sync.dto.request;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +37,7 @@ class SyncJobSortFieldTest {
     @DisplayName("지원하지 않는 sortField 값이면 예외가 발생한다")
     void fromThrowsExceptionWhenValueIsInvalid() {
         assertThatThrownBy(() -> SyncJobSortField.from("createdAt"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("유효하지 않은 sortField 값입니다");
     }
 }

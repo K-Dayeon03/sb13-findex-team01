@@ -1,5 +1,6 @@
 package com.sb13.findex.indexinfo.repository;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.*;
 import com.querydsl.core.types.dsl.*;
@@ -270,7 +271,7 @@ public class IndexInfoRepositoryImpl
             return false;
         }
 
-        throw new IllegalArgumentException(
+        throw new InvalidRequestException(
                 "지원하지 않는 정렬 방향입니다: " + sortDirection
         );
     }
@@ -312,4 +313,3 @@ public class IndexInfoRepositoryImpl
                 .fetch();
     }
 }
-

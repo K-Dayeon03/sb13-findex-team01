@@ -7,7 +7,7 @@ spring:
       ddl-auto: validate
 
   flyway:
-    enabled: false
+    enabled: true
     locations: classpath:db/migration
 
 findex:
