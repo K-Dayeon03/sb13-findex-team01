@@ -34,7 +34,6 @@ public class AutoSyncConfig extends BaseEntity {
     @JoinColumn(name = "index_info_id", nullable = false)
     private IndexInfo indexInfo;
 
-    // 스펙상 수정 가능한 유일한 필드라 Setter만 개별로
     @Setter
     @Column(nullable = false)
     private boolean enabled;

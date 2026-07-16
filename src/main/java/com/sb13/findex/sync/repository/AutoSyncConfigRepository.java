@@ -3,6 +3,7 @@ package com.sb13.findex.sync.repository;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
 import com.sb13.findex.sync.entity.AutoSyncConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,4 +23,24 @@ public interface AutoSyncConfigRepository extends JpaRepository<AutoSyncConfig, 
 
     // 지수 삭제 시 연결된 자동 연동 설정도 함께 삭제 (유하정님 요청 - IndexInfo 삭제 서비스에서 호출)
     void deleteByIndexInfoId(Long indexInfoId);
+
+    // 동시 요청 경쟁 상태 방지, DB 레벨 원자적 upsert
+    @Modifying
+    @Query(value = """
+            INSERT INTO auto_sync_config (
+                index_info_id,
+                enabled,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                :indexInfoId,
+                :enabled,
+                now(),
+                now()
+            )
+            ON CONFLICT (index_info_id)
+            DO NOTHING
+            """, nativeQuery = true)
+    void upsertIfAbsent(@Param("indexInfoId") Long indexInfoId, @Param("enabled") boolean enabled);
 }
