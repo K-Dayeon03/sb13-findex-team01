@@ -3,6 +3,7 @@ package com.sb13.findex.indexdata.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.ComparableExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
@@ -11,13 +12,16 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sb13.findex.indexinfo.entity.QIndexInfo;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSortField;
+import com.sb13.findex.indexdata.dto.response.IndexDataCsvRow;
 import com.sb13.findex.indexdata.entity.IndexData;
+import com.sb13.findex.indexdata.entity.IndexType;
 import com.sb13.findex.indexdata.entity.QIndexData;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Repository;
 
@@ -57,19 +61,37 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
   }
 
   @Override
-  public List<IndexData> searchForExport(IndexDataSearchCondition condition) {
+  public Stream<IndexDataCsvRow> streamForExport(IndexDataSearchCondition condition) {
     QIndexData indexData = QIndexData.indexData;
     QIndexInfo indexInfo = QIndexInfo.indexInfo;
 
     return queryFactory
-        .selectFrom(indexData)
-        .join(indexData.indexInfo, indexInfo).fetchJoin()
+        .select(Projections.constructor(
+            IndexDataCsvRow.class,
+            indexData.id,
+            indexInfo.id,
+            indexInfo.indexClassification,
+            indexInfo.indexName,
+            indexData.baseDate,
+            indexData.indexType,
+            indexData.marketPrice,
+            indexData.closingPrice,
+            indexData.highPrice,
+            indexData.lowPrice,
+            indexData.versus,
+            indexData.fluctuationRate,
+            indexData.tradingQuantity,
+            indexData.tradingPrice,
+            indexData.marketTotalAmount
+        ))
+        .from(indexData)
+        .join(indexData.indexInfo, indexInfo)
         .where(filterCondition(condition))
         .orderBy(
             sortOrder(condition),
             idOrder(condition)
         )
-        .fetch();
+        .stream();
   }
   /*
   * 즐겨찾기된 지수들 중에서
@@ -145,15 +167,39 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
     boolean ascending = isAscending(condition.sortDirection());
 
     return switch (sortField) {
+      case ID -> compareCursor(
+          QIndexData.indexData.id,
+          Long.valueOf(condition.cursor()),
+          condition.idAfter(),
+          ascending
+      );
       case INDEX_INFO_ID -> compareCursor(
           QIndexData.indexData.indexInfo.id,
           Long.valueOf(condition.cursor()),
           condition.idAfter(),
           ascending
       );
+      case INDEX_CLASSIFICATION -> compareCursor(
+          QIndexData.indexData.indexInfo.indexClassification,
+          condition.cursor(),
+          condition.idAfter(),
+          ascending
+      );
+      case INDEX_NAME -> compareCursor(
+          QIndexData.indexData.indexInfo.indexName,
+          condition.cursor(),
+          condition.idAfter(),
+          ascending
+      );
       case BASE_DATE -> compareCursor(
           QIndexData.indexData.baseDate,
           LocalDate.parse(condition.cursor()),
+          condition.idAfter(),
+          ascending
+      );
+      case SOURCE_TYPE -> compareCursor(
+          QIndexData.indexData.indexType,
+          IndexType.valueOf(condition.cursor().trim().toUpperCase()),
           condition.idAfter(),
           ascending
       );
@@ -273,8 +319,12 @@ public class IndexDataRepositoryImpl implements IndexDataRepositoryCustom {
     Order order = isAscending(condition.sortDirection()) ? Order.ASC : Order.DESC;
 
     return switch (sortField) {
+      case ID -> new OrderSpecifier<>(order, QIndexData.indexData.id);
       case INDEX_INFO_ID -> new OrderSpecifier<>(order, QIndexData.indexData.indexInfo.id);
+      case INDEX_CLASSIFICATION -> new OrderSpecifier<>(order, QIndexData.indexData.indexInfo.indexClassification);
+      case INDEX_NAME -> new OrderSpecifier<>(order, QIndexData.indexData.indexInfo.indexName);
       case BASE_DATE -> new OrderSpecifier<>(order, QIndexData.indexData.baseDate);
+      case SOURCE_TYPE -> new OrderSpecifier<>(order, QIndexData.indexData.indexType);
       case MARKET_PRICE -> new OrderSpecifier<>(order, QIndexData.indexData.marketPrice);
       case CLOSING_PRICE -> new OrderSpecifier<>(order, QIndexData.indexData.closingPrice);
       case HIGH_PRICE -> new OrderSpecifier<>(order, QIndexData.indexData.highPrice);

@@ -1,6 +1,7 @@
 package com.sb13.findex.sync.repository;
 
 
+import com.sb13.findex.global.exception.InvalidRequestException;
 import com.sb13.findex.sync.dto.request.SyncJobSearchCommand;
 import com.sb13.findex.sync.dto.request.SyncJobSortField;
 import com.sb13.findex.sync.entity.SyncJob;
@@ -157,7 +158,7 @@ public class SyncJobRepositoryImpl implements SyncJobRepositoryCustom{
                 case JOB_TIME -> LocalDateTime.parse(cursor);
             };
         }catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("유효하지 않은 cursor 값입니다: " + cursor);
+            throw new InvalidRequestException("유효하지 않은 cursor 값입니다: " + cursor, e);
         }
     }
 

@@ -7,6 +7,8 @@ import com.sb13.findex.indexdata.dto.command.IndexDataCreateCommand;
 import com.sb13.findex.indexdata.dto.response.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
 
+import java.io.Writer;
+
 public interface IndexDataService {
 
     IndexDataResponse createIndexData(IndexDataCreateCommand command);
@@ -19,8 +21,7 @@ public interface IndexDataService {
     void deleteByIndexInfoId(Long indexInfoId);
 
     CursorPageResponse<IndexDataResponse> search(IndexDataSearchCondition condition);
-    byte[] exportCsv(IndexDataSearchCondition condition);
-
+    void exportCsv(IndexDataSearchCondition condition, Writer writer);
     //서비스는 open-api 저장/갱신 기능도 제공
     void saveOrUpdateOpenApiData(IndexDataOpenApiCommand command);
 

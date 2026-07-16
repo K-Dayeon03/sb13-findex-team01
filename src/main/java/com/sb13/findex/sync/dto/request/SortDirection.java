@@ -1,5 +1,7 @@
 package com.sb13.findex.sync.dto.request;
 
+import com.sb13.findex.global.exception.InvalidRequestException;
+
 public enum SortDirection{
     ASC,
     DESC;
@@ -15,6 +17,6 @@ public enum SortDirection{
                 return direction;
             }
         }
-        throw new IllegalArgumentException("유효하지 않은 sortDirection 값입니다: " + value);
+        throw new InvalidRequestException("유효하지 않은 sortDirection 값입니다: " + value);
     }
 }

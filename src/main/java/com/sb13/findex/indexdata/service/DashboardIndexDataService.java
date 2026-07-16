@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 public class DashboardIndexDataService {
 
     private final IndexDataRepository indexDataRepository;
+    private static final int MAX_MOVING_AVERAGE_PERIOD = 20;
+
     private Optional<IndexPerformanceResponse> calculatePerformance(
             IndexData currentData,
             IndexData beforeData
@@ -122,8 +124,7 @@ public class DashboardIndexDataService {
         LocalDate endDate = latestData.getBaseDate();
         LocalDate startDate = getChartStartDate(endDate, periodType);
 
-        LocalDate movingAverageStartDate = startDate.minusDays(40);
-
+        LocalDate movingAverageStartDate = startDate.minusDays(MAX_MOVING_AVERAGE_PERIOD - 1);
         List<IndexData> dataList =
                 indexDataRepository.findDataByIndexInfoIdAndBaseDateBetween(
                         indexInfoId,
@@ -192,34 +193,43 @@ public class DashboardIndexDataService {
     ) {
         List<ChartDataPointResponse> result = new ArrayList<>();
 
-        for (int i = period - 1; i < dataList.size(); i++) {
-            IndexData currentData = dataList.get(i);
+        for (IndexData currentData : dataList) {
+            LocalDate currentDate = currentData.getBaseDate();
 
-            if (currentData.getBaseDate().isBefore(startDate)) {
+            if (currentDate.isBefore(startDate)) {
                 continue;
             }
 
-            BigDecimal sum = BigDecimal.ZERO;
+            LocalDate fromDate = currentDate.minusDays(period - 1);
 
-            for (int j = i - period + 1; j <= i; j++) {
-                sum = sum.add(dataList.get(j).getClosingPrice());
+            List<IndexData> periodData = dataList.stream()
+                    .filter(data -> !data.getBaseDate().isBefore(fromDate))
+                    .filter(data -> !data.getBaseDate().isAfter(currentDate))
+                    .toList();
+
+            if (periodData.isEmpty()) {
+                continue;
             }
 
+            BigDecimal sum = periodData.stream()
+                    .map(IndexData::getClosingPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            //BigDecimal.valueOf(period)->BigDecimal.valueOf(periodData.size())
+            //날짜 범위 안에 주말/휴장일 때문에 실제 데이터가 5개보다 적을 수 있기 때문
             BigDecimal average = sum.divide(
-                    BigDecimal.valueOf(period),
+                    BigDecimal.valueOf(periodData.size()),
                     4,
                     RoundingMode.HALF_UP
             );
 
             result.add(new ChartDataPointResponse(
-                    currentData.getBaseDate(),
+                    currentDate,
                     average
             ));
         }
 
         return result;
     }
-
     public List<RankedIndexPerformanceResponse> getPerformanceRank(
             Long indexInfoId,
             UnitPeriodType periodType,

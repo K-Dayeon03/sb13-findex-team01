@@ -3,6 +3,8 @@ package com.sb13.findex.global.exception;
 import com.sb13.findex.indexinfo.exception.DuplicateIndexInfoException;
 import com.sb13.findex.indexinfo.exception.ErrorResponse;
 import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
+import com.sb13.findex.sync.exception.AutoSyncConfigNotFoundException;
+import com.sb13.findex.sync.exception.DuplicateAutoSyncConfigException;
 import java.time.Instant;
 
 import java.util.Locale;
@@ -30,6 +32,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequestException(
+            InvalidRequestException exception
+    ) {
+        return createErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "잘못된 요청입니다.",
+                exception.getMessage()
+        );
+    }
+
     @ExceptionHandler(IndexInfoNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleIndexInfoNotFound(
             IndexInfoNotFoundException exception
@@ -47,6 +60,28 @@ public class GlobalExceptionHandler {
         return createErrorResponse(
                 HttpStatus.CONFLICT,
                 "지수 정보 등록에 실패했습니다.",
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AutoSyncConfigNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAutoSyncConfigNotFoundException(
+            AutoSyncConfigNotFoundException exception
+    ) {
+        return createErrorResponse(
+                HttpStatus.NOT_FOUND,
+                "자동 연동 설정을 찾을 수 없습니다.",
+                exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(DuplicateAutoSyncConfigException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateAutoSyncConfigException(
+            DuplicateAutoSyncConfigException exception
+    ) {
+        return createErrorResponse(
+                HttpStatus.CONFLICT,
+                "자동 연동 설정 등록에 실패했습니다.",
                 exception.getMessage()
         );
     }

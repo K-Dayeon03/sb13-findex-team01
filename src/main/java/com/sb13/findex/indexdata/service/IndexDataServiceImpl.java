@@ -2,13 +2,14 @@ package com.sb13.findex.indexdata.service;
 
 import com.sb13.findex.global.exception.DuplicateIndexDataException;
 import com.sb13.findex.global.exception.IndexDataNotFoundException;
+import com.sb13.findex.indexdata.dto.command.IndexDataCreateCommand;
 import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
 import com.sb13.findex.indexdata.dto.command.IndexDataUpdateCommand;
-import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
-import com.sb13.findex.indexdata.dto.command.IndexDataCreateCommand;
-import com.sb13.findex.indexdata.dto.response.IndexDataResponse;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSearchCondition;
 import com.sb13.findex.indexdata.dto.condition.IndexDataSortField;
+import com.sb13.findex.indexdata.dto.response.IndexDataCsvRow;
+import com.sb13.findex.indexdata.dto.response.IndexDataResponse;
+import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
 import com.sb13.findex.indexdata.entity.IndexData;
 import com.sb13.findex.indexdata.mapper.IndexDataMapper;
 import com.sb13.findex.indexdata.repository.IndexDataRepository;
@@ -16,8 +17,12 @@ import com.sb13.findex.indexinfo.entity.IndexInfo;
 import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
 import com.sb13.findex.indexinfo.repository.IndexInfoRepository;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -183,8 +188,12 @@ public class IndexDataServiceImpl implements IndexDataService {
         IndexDataSortField sortField = getSortField(sortFieldValue);
 
         return switch (sortField) {
+            case ID -> String.valueOf(indexData.getId());
             case INDEX_INFO_ID -> String.valueOf(indexData.getIndexInfo().getId());
+            case INDEX_CLASSIFICATION -> indexData.getIndexInfo().getIndexClassification();
+            case INDEX_NAME -> indexData.getIndexInfo().getIndexName();
             case BASE_DATE -> indexData.getBaseDate().toString();
+            case SOURCE_TYPE -> indexData.getIndexType().name();
             case MARKET_PRICE -> indexData.getMarketPrice().toPlainString();
             case CLOSING_PRICE -> indexData.getClosingPrice().toPlainString();
             case HIGH_PRICE -> indexData.getHighPrice().toPlainString();
@@ -205,35 +214,46 @@ public class IndexDataServiceImpl implements IndexDataService {
         return IndexDataSortField.from(sortField);
     }
     @Override
-    public byte[] exportCsv(IndexDataSearchCondition condition) {
-        List<IndexData> indexDataList = indexDataRepository.searchForExport(condition);
+    public void exportCsv(IndexDataSearchCondition condition, Writer writer) {
+        try {
+            writer.write("\uFEFF");
+            writer.write("ID,지수정보ID,지수분류명,지수명,기준일자,소스타입,시가,종가,고가,저가,대비,등락률,거래량,거래대금,상장시가총액\n");
 
-        StringBuilder csv = new StringBuilder();
+            try (Stream<IndexDataCsvRow> indexDataStream = indexDataRepository.streamForExport(condition)) {
+                indexDataStream.forEach(indexData -> writeCsvLine(writer, indexData));
+            }
 
-        csv.append("\uFEFF"); // Excel 한글 깨짐 방지용 UTF-8 BOM
-        csv.append("ID,지수정보ID,지수분류명,지수명,기준일자,소스타입,시가,종가,고가,저가,대비,등락률,거래량,거래대금,상장시가총액\n");
-
-        for (IndexData indexData : indexDataList) {
-            csv.append(indexData.getId()).append(",");
-            csv.append(indexData.getIndexInfo().getId()).append(",");
-            csv.append(escapeCsv(indexData.getIndexInfo().getIndexClassification())).append(",");
-            csv.append(escapeCsv(indexData.getIndexInfo().getIndexName())).append(",");
-            csv.append(indexData.getBaseDate()).append(",");
-            csv.append(indexData.getIndexType()).append(",");
-            csv.append(indexData.getMarketPrice()).append(",");
-            csv.append(indexData.getClosingPrice()).append(",");
-            csv.append(indexData.getHighPrice()).append(",");
-            csv.append(indexData.getLowPrice()).append(",");
-            csv.append(indexData.getVersus()).append(",");
-            csv.append(indexData.getFluctuationRate()).append(",");
-            csv.append(indexData.getTradingQuantity()).append(",");
-            csv.append(indexData.getTradingPrice()).append(",");
-            csv.append(indexData.getMarketTotalAmount()).append("\n");
+            writer.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException("CSV export 중 오류가 발생했습니다.", e);
         }
-
-        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 
+    private void writeCsvLine(Writer writer, IndexDataCsvRow indexData) {
+        try {
+            writer.write(toCsvLine(indexData));
+        } catch (IOException e) {
+            throw new UncheckedIOException("CSV export 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    private String toCsvLine(IndexDataCsvRow indexData) {
+        return indexData.id() + "," +
+                indexData.indexInfoId() + "," +
+                escapeCsv(sanitizeSpreadsheetCell(indexData.indexClassification())) + "," +
+                escapeCsv(sanitizeSpreadsheetCell(indexData.indexName())) + "," +
+                indexData.baseDate() + "," +
+                indexData.indexType() + "," +
+                indexData.marketPrice() + "," +
+                indexData.closingPrice() + "," +
+                indexData.highPrice() + "," +
+                indexData.lowPrice() + "," +
+                indexData.versus() + "," +
+                indexData.fluctuationRate() + "," +
+                indexData.tradingQuantity() + "," +
+                indexData.tradingPrice() + "," +
+                indexData.marketTotalAmount() + "\n";
+    }
     private String escapeCsv(String value) {
         if (value == null) {
             return "";
@@ -241,13 +261,21 @@ public class IndexDataServiceImpl implements IndexDataService {
 
         String escaped = value.replace("\"", "\"\"");
 
-        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+        if (escaped.contains(",") || escaped.contains("\"")
+                || escaped.contains("\r") || escaped.contains("\n")) {
             return "\"" + escaped + "\"";
         }
 
         return escaped;
     }
 
+    private String sanitizeSpreadsheetCell(String value) {
+        if (value != null && !value.isEmpty() && "=+-@".indexOf(value.charAt(0)) >= 0) {
+            return "'" + value;
+        }
+
+        return value;
+    }
 
 
 }

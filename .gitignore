@@ -38,3 +38,4 @@ out/
 
 ## local yaml ##
 **/resources/application-local.yaml
+**/resources/application-local-h2.yml
