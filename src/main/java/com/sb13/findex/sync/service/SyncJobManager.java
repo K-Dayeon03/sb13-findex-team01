@@ -6,7 +6,7 @@ import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
 import com.sb13.findex.indexinfo.dto.command.IndexInfoCreateCommand;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
 import com.sb13.findex.indexinfo.service.IndexInfoReader;
-import com.sb13.findex.sync.client.modle.OpenApiErrorCode;
+import com.sb13.findex.sync.client.model.OpenApiErrorCode;
 import com.sb13.findex.sync.dto.command.IndexDataSyncCommand;
 import com.sb13.findex.sync.dto.command.IndexInfoKey;
 import com.sb13.findex.sync.dto.request.StockMarketIndexApiRequest;

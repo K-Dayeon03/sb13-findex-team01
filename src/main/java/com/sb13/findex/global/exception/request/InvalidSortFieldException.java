@@ -1,0 +1,12 @@
+package com.sb13.findex.global.exception.request;
+
+import com.sb13.findex.global.exception.InvalidRequestException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public class InvalidSortFieldException extends InvalidRequestException {
+    public InvalidSortFieldException(String value) {
+        super("지원하지 않는 정렬 필드입니다: " + value);
+    }
+}

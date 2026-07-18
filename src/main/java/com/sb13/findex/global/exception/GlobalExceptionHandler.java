@@ -1,14 +1,15 @@
 package com.sb13.findex.global.exception;
 
-import com.sb13.findex.indexinfo.exception.DuplicateIndexInfoException;
-import com.sb13.findex.indexinfo.exception.ErrorResponse;
-import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
-import com.sb13.findex.sync.exception.AutoSyncConfigNotFoundException;
-import com.sb13.findex.sync.exception.DuplicateAutoSyncConfigException;
 import java.time.Instant;
 
 import java.util.Locale;
 
+import com.sb13.findex.global.exception.autosyncconfig.AutoSyncConfigNotFoundException;
+import com.sb13.findex.global.exception.autosyncconfig.DuplicateAutoSyncConfigException;
+import com.sb13.findex.global.exception.indexdata.DuplicateIndexDataException;
+import com.sb13.findex.global.exception.indexdata.IndexDataNotFoundException;
+import com.sb13.findex.global.exception.indexinfo.DuplicateIndexInfoException;
+import com.sb13.findex.global.exception.indexinfo.IndexInfoNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,7 +28,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<ErrorResponse> handleBindException(
+    public ResponseEntity<ApiErrorResponse> handleBindException(
             BindException exception
     ) {
         String details = extractDetails(exception);
@@ -40,7 +41,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidRequestException(
+    public ResponseEntity<ApiErrorResponse> handleInvalidRequestException(
             InvalidRequestException exception
     ) {
         return createErrorResponse(
@@ -51,7 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IndexInfoNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleIndexInfoNotFound(
+    public ResponseEntity<ApiErrorResponse> handleIndexInfoNotFound(
             IndexInfoNotFoundException exception
     ) {
         return createErrorResponse(
@@ -60,8 +61,9 @@ public class GlobalExceptionHandler {
                 exception.getMessage()
         );
     }
+
     @ExceptionHandler(DuplicateIndexInfoException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateIndexInfo(
+    public ResponseEntity<ApiErrorResponse> handleDuplicateIndexInfo(
             DuplicateIndexInfoException exception
     ) {
         return createErrorResponse(
@@ -72,7 +74,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AutoSyncConfigNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleAutoSyncConfigNotFoundException(
+    public ResponseEntity<ApiErrorResponse> handleAutoSyncConfigNotFoundException(
             AutoSyncConfigNotFoundException exception
     ) {
         return createErrorResponse(
@@ -83,7 +85,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateAutoSyncConfigException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateAutoSyncConfigException(
+    public ResponseEntity<ApiErrorResponse> handleDuplicateAutoSyncConfigException(
             DuplicateAutoSyncConfigException exception
     ) {
         return createErrorResponse(
@@ -103,12 +105,12 @@ public class GlobalExceptionHandler {
                 .orElse("유효하지 않은 요청입니다.");
     }
 
-    private ResponseEntity<ErrorResponse> createErrorResponse(
+    private ResponseEntity<ApiErrorResponse> createErrorResponse(
             HttpStatus status,
             String message,
             String details
     ) {
-        ErrorResponse response = new ErrorResponse(
+        ApiErrorResponse response = new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
                 message,
@@ -121,7 +123,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IndexDataNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleIndexDataNotFoundException(
+    public ResponseEntity<ApiErrorResponse> handleIndexDataNotFoundException(
         IndexDataNotFoundException exception
     ) {
         return createErrorResponse(
@@ -132,7 +134,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolationException(
         DataIntegrityViolationException exception
     ) {
         String specificMessage = exception.getMostSpecificCause().getMessage();
@@ -154,7 +156,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateIndexDataException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateIndexDataException(
+    public ResponseEntity<ApiErrorResponse> handleDuplicateIndexDataException(
         DuplicateIndexDataException exception
     ) {
         return createErrorResponse(
@@ -165,7 +167,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentTypeMismatch(
             HttpServletRequest request,
             MethodArgumentTypeMismatchException exception
     ) {
@@ -186,7 +188,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingRequestParameter(
+    public ResponseEntity<ApiErrorResponse> handleMissingRequestParameter(
             HttpServletRequest request,
             MissingServletRequestParameterException exception
     ) {
@@ -206,7 +208,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+    public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(
             HttpServletRequest request,
             HttpMessageNotReadableException exception
     ) {
@@ -226,7 +228,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(
+    public ResponseEntity<ApiErrorResponse> handleException(
             HttpServletRequest request,
             Exception exception
     ) {

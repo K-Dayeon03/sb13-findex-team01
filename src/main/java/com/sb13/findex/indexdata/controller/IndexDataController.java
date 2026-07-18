@@ -1,4 +1,5 @@
 package com.sb13.findex.indexdata.controller;
+import com.sb13.findex.indexdata.controller.swagger.IndexDataApi;
 import com.sb13.findex.indexdata.dto.response.*;
 import com.sb13.findex.indexdata.dto.command.IndexDataUpdateCommand;
 import com.sb13.findex.indexdata.dto.request.IndexDataUpdateRequest;

@@ -14,7 +14,7 @@ import com.sb13.findex.indexdata.entity.IndexType;
 import com.sb13.findex.indexdata.entity.UnitPeriodType;
 import com.sb13.findex.indexdata.repository.IndexDataRepository;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
-import com.sb13.findex.sync.entity.SourceType;
+import com.sb13.findex.indexinfo.entity.SourceType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;

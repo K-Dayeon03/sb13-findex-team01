@@ -4,7 +4,7 @@ import com.sb13.findex.sync.dto.command.IndexDataSyncJobTarget;
 import com.sb13.findex.sync.dto.command.IndexInfoKey;
 import com.sb13.findex.sync.entity.JobResult;
 import com.sb13.findex.sync.entity.JobType;
-import com.sb13.findex.sync.entity.SourceType;
+import com.sb13.findex.indexinfo.entity.SourceType;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,6 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;

@@ -2,13 +2,14 @@ package com.sb13.findex.global.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.sb13.findex.indexinfo.exception.DuplicateIndexInfoException;
-import com.sb13.findex.indexinfo.exception.ErrorResponse;
-import com.sb13.findex.indexinfo.exception.IndexInfoNotFoundException;
-import com.sb13.findex.sync.exception.AutoSyncConfigNotFoundException;
-import com.sb13.findex.sync.exception.DuplicateAutoSyncConfigException;
-import com.sb13.findex.sync.exception.InvalidSortDirectionException;
-import com.sb13.findex.sync.exception.InvalidSortFieldException;
+import com.sb13.findex.global.exception.autosyncconfig.AutoSyncConfigNotFoundException;
+import com.sb13.findex.global.exception.autosyncconfig.DuplicateAutoSyncConfigException;
+import com.sb13.findex.global.exception.indexdata.DuplicateIndexDataException;
+import com.sb13.findex.global.exception.indexdata.IndexDataNotFoundException;
+import com.sb13.findex.global.exception.indexinfo.DuplicateIndexInfoException;
+import com.sb13.findex.global.exception.indexinfo.IndexInfoNotFoundException;
+import com.sb13.findex.global.exception.request.InvalidSortDirectionException;
+import com.sb13.findex.global.exception.request.InvalidSortFieldException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -33,7 +34,7 @@ class GlobalExceptionHandlerTest {
                 new InvalidRequestException("지원하지 않는 정렬 필드입니다: source");
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleInvalidRequestException(exception);
 
         // then
@@ -79,7 +80,7 @@ class GlobalExceptionHandlerTest {
         IndexInfoNotFoundException exception = new IndexInfoNotFoundException(1L);
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleIndexInfoNotFound(exception);
 
         // then
@@ -92,7 +93,7 @@ class GlobalExceptionHandlerTest {
         IndexDataNotFoundException exception = new IndexDataNotFoundException(1L);
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleIndexDataNotFoundException(exception);
 
         // then
@@ -105,7 +106,7 @@ class GlobalExceptionHandlerTest {
         DuplicateIndexInfoException exception = new DuplicateIndexInfoException();
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleDuplicateIndexInfo(exception);
 
         // then
@@ -118,7 +119,7 @@ class GlobalExceptionHandlerTest {
         DuplicateIndexDataException exception = new DuplicateIndexDataException();
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleDuplicateIndexDataException(exception);
 
         // then
@@ -131,7 +132,7 @@ class GlobalExceptionHandlerTest {
         AutoSyncConfigNotFoundException exception = new AutoSyncConfigNotFoundException(1L);
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleAutoSyncConfigNotFoundException(exception);
 
         // then
@@ -144,7 +145,7 @@ class GlobalExceptionHandlerTest {
         DuplicateAutoSyncConfigException exception = new DuplicateAutoSyncConfigException(1L);
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleDuplicateAutoSyncConfigException(exception);
 
         // then
@@ -160,7 +161,7 @@ class GlobalExceptionHandlerTest {
         );
 
         // when
-        ResponseEntity<ErrorResponse> response =
+        ResponseEntity<ApiErrorResponse> response =
                 exceptionHandler.handleDataIntegrityViolationException(exception);
 
         // then
@@ -170,7 +171,7 @@ class GlobalExceptionHandlerTest {
     }
 
     private void assertErrorResponse(
-            ResponseEntity<ErrorResponse> response,
+            ResponseEntity<ApiErrorResponse> response,
             HttpStatus status,
             String message
     ) {

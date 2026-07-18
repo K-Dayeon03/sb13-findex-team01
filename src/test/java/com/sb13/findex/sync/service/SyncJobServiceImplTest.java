@@ -11,6 +11,7 @@ import com.sb13.findex.indexdata.dto.command.IndexDataOpenApiCommand;
 import com.sb13.findex.indexdata.service.IndexDataService;
 import com.sb13.findex.indexinfo.dto.command.IndexInfoCreateCommand;
 import com.sb13.findex.indexinfo.entity.IndexInfo;
+import com.sb13.findex.indexinfo.entity.SourceType;
 import com.sb13.findex.indexinfo.service.IndexInfoService;
 import com.sb13.findex.sync.dto.command.IndexDataSyncJobTarget;
 import com.sb13.findex.sync.dto.command.IndexInfoKey;
@@ -19,6 +20,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import com.sb13.findex.sync.service.impl.SyncJobServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -94,7 +97,7 @@ class SyncJobServiceImplTest {
                 100,
                 LocalDate.of(1980, 1, 4),
                 BigDecimal.valueOf(100),
-                com.sb13.findex.sync.entity.SourceType.OPEN_API,
+                SourceType.OPEN_API,
                 false
         );
         ReflectionTestUtils.setField(indexInfo, "id", 1L);

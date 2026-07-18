@@ -2,6 +2,7 @@ package com.sb13.findex.indexdata.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.sb13.findex.indexdata.controller.swagger.IndexDataApi;
 import com.sb13.findex.indexdata.dto.request.IndexDataCreateRequest;
 import com.sb13.findex.indexdata.dto.request.IndexDataUpdateRequest;
 import com.sb13.findex.indexdata.dto.response.IndexDataResponse;

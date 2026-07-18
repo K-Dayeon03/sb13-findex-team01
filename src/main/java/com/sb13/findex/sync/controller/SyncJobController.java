@@ -2,6 +2,7 @@ package com.sb13.findex.sync.controller;
 
 
 import com.sb13.findex.indexdata.dto.response.CursorPageResponse;
+import com.sb13.findex.sync.controller.swagger.SyncJobApi;
 import com.sb13.findex.sync.dto.request.IndexDataSyncRequest;
 import com.sb13.findex.sync.dto.request.SyncJobSearchRequest;
 import com.sb13.findex.sync.dto.response.SyncJobDto;

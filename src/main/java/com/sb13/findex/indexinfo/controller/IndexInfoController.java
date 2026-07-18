@@ -1,5 +1,6 @@
 package com.sb13.findex.indexinfo.controller;
 
+import com.sb13.findex.indexinfo.controller.swagger.IndexInfoApi;
 import com.sb13.findex.indexinfo.dto.command.IndexInfoCreateCommand;
 import com.sb13.findex.indexinfo.dto.command.IndexInfoUpdateCommand;
 import com.sb13.findex.indexinfo.dto.request.IndexInfoCreateRequest;

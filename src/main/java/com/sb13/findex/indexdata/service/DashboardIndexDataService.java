@@ -1,6 +1,6 @@
 package com.sb13.findex.indexdata.service;
 
-import com.sb13.findex.global.exception.IndexDataNotFoundException;
+import com.sb13.findex.global.exception.indexdata.IndexDataNotFoundException;
 import com.sb13.findex.indexdata.dto.response.IndexPerformanceResponse;
 import com.sb13.findex.indexdata.entity.IndexData;
 import com.sb13.findex.indexdata.entity.UnitPeriodType;
