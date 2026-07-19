@@ -113,7 +113,7 @@ public class IndexDataController implements IndexDataApi {
     }
 
     @Override
-    @GetMapping(value = "/export/csv", produces = "text/csv")
+    @GetMapping(value = "/export/csv")
     public ResponseEntity<StreamingResponseBody> exportCsv(
             @RequestParam(required = false) Long indexInfoId,
 
