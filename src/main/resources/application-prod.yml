@@ -1,7 +1,7 @@
 server:
   address: 0.0.0.0
   port: ${PORT:8080}
-  forwarding-headers-strategy: framework
+  forward-headers-strategy: framework
 
 spring:
   datasource:
